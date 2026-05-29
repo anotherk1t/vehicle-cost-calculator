@@ -336,6 +336,11 @@ h1{font-family:"Anton",Impact,sans-serif; font-weight:400; text-transform:upperc
 .dek{font-size:1.16rem; color:#cfcabf; max-width:50ch; margin:1.3rem 0 0; font-style:italic}
 .rule{height:3px; margin:1.9rem 0 0; border-radius:2px;
   background:linear-gradient(90deg,var(--credit),var(--gold) 50%,var(--debit))}
+.nav{display:flex; gap:.4rem 1.2rem; flex-wrap:wrap; margin-top:1.5rem;
+  font-family:"IBM Plex Mono",monospace; font-size:.74rem}
+.nav a{color:var(--muted); text-decoration:none; border-bottom:1px dotted transparent; padding-bottom:1px}
+.nav a:hover{color:var(--credit); border-bottom-color:var(--credit)}
+.nav a.here{color:var(--ink)}
 
 /* controls */
 .controls{margin-top:2.2rem; display:grid; grid-template-columns:1fr; gap:1.4rem}
@@ -468,6 +473,11 @@ def _render_html(*, year: int) -> str:
   some cost on everyone else. This reconciles the two — and shows the share of
   your own footprint you actually cover.</p>
   <div class="rule"></div>
+  <nav class="nav">
+    <a href="cost.html">Personal cost</a>
+    <a href="index.html" class="here">Public-money ledger</a>
+    <a href="depreciation.html">Depreciation curves</a>
+  </nav>
 
   <div class="controls">
     <div class="field">

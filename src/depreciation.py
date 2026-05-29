@@ -77,6 +77,11 @@ h1{font-family:"Anton",Impact,sans-serif; font-weight:400; text-transform:upperc
 .dek{font-size:1.16rem; color:#cfcabf; max-width:46ch; margin:1.3rem 0 0; font-style:italic}
 .redline{height:3px; margin:1.9rem 0 0; border-radius:2px;
   background:linear-gradient(90deg,var(--cyan),var(--amber) 50%,var(--red))}
+.nav{display:flex; gap:.4rem 1.2rem; flex-wrap:wrap; margin-top:1.5rem;
+  font-family:"IBM Plex Mono",monospace; font-size:.74rem}
+.nav a{color:var(--muted); text-decoration:none; border-bottom:1px dotted transparent; padding-bottom:1px}
+.nav a:hover{color:var(--amber); border-bottom-color:var(--amber)}
+.nav a.here{color:var(--ink)}
 .chips{display:flex; flex-wrap:wrap; gap:.5rem 1.6rem; margin-top:1.6rem}
 .chip b{display:block; font-size:1.7rem; color:var(--ink); font-family:"IBM Plex Mono",monospace}
 .chip span{color:var(--muted); text-transform:uppercase; letter-spacing:.12em; font-size:.66rem;
@@ -299,6 +304,11 @@ def _render_html(agg: dict) -> str:
     <div class="chip" id="nclasses"><b>—</b><span>engine classes</span></div>
   </div>
   {sample_banner}
+  <nav class="nav">
+    <a href="cost.html">Personal cost</a>
+    <a href="index.html">Public-money ledger</a>
+    <a href="depreciation.html" class="here">Depreciation curves</a>
+  </nav>
 </header>
 {body}
 <footer>

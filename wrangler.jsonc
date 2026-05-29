@@ -1,0 +1,16 @@
+{
+  // The Worker that already points at your domain. Confirm this name matches
+  // (yours are: yellow-mud-0e8b, misty-darkness-3d19, jakosdojade) and change
+  // it if the domain is wired to a different one.
+  "name": "yellow-mud-0e8b",
+  "compatibility_date": "2026-04-23",
+  "main": "worker/index.js",
+  "assets": {
+    // Built by `python build.py`. The Worker runs first so the Basic-Auth gate
+    // covers every asset (without run_worker_first the files serve directly and
+    // auth is bypassed).
+    "directory": "./public/",
+    "binding": "ASSETS",
+    "run_worker_first": true
+  }
+}

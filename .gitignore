@@ -8,3 +8,7 @@ __pycache__/
 .ruff_cache/
 .venv/
 venv/
+
+# Node / Wrangler
+node_modules/
+.wrangler/
