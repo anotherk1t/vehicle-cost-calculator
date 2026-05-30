@@ -16,6 +16,8 @@ import json
 import logging
 import os
 
+from src import ui
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_OUTPUT_DIR = "public"
@@ -36,7 +38,12 @@ def render_depreciation(
         agg = json.load(f)
 
     with open(out_path, "w", encoding="utf-8") as f:
-        f.write(_render_html(agg))
+        car_agg = {"meta": {}, "models": {}}
+        _car = os.path.join(os.path.dirname(aggregates_path) or ".", "cars_aggregates.json")
+        if os.path.exists(_car):
+            with open(_car, encoding="utf-8") as cf:
+                car_agg = json.load(cf)
+        f.write(_render_html(agg, car_agg))
     logger.info("Rendered depreciation page → %s", out_path)
     return out_path
 
@@ -132,6 +139,8 @@ footer{margin-top:3.4rem; padding-top:1.4rem; border-top:1px solid var(--line);
 .reveal{animation:rise .7s cubic-bezier(.2,.7,.2,1) both}
 @media (prefers-reduced-motion:reduce){.reveal{animation:none}}
 """
+
+STRINGS = {'en': {'veh_moto': 'Moto', 'veh_car': 'Car', 'h1': 'How fast a<br>vehicle bleeds value', 'dek_moto': 'Cross-sectional depreciation curves by engine class, read off private-seller listings and smoothed with weighted isotonic regression.', 'dek_car': 'Per-model depreciation curves for the Polish used-car market — value vs age from private-seller listings.', 'nav_cost': 'Personal cost', 'nav_ledger': 'Public-money ledger', 'nav_depr': 'Depreciation curves', 'car_eye': 'By model', 'car_h': 'Car depreciation by model', 'car_lede': 'Per-model value-vs-age curves from PL private-seller car listings (the most-listed models). Dots are raw medians, the band is P25–P75, the line is the smoothed fit. Read the shape: how much value each model keeps.', 'car_none': 'No car curves yet.'}, 'pl': {'veh_moto': 'Moto', 'veh_car': 'Auto', 'h1': 'Jak szybko<br>pojazd traci wartość', 'dek_moto': 'Przekrojowe krzywe utraty wartości wg klasy silnika, odczytane z ofert prywatnych i wygładzone regresją izotoniczną.', 'dek_car': 'Krzywe utraty wartości per model dla polskiego rynku aut używanych — wartość względem wieku z ofert prywatnych.', 'nav_cost': 'Koszt osobisty', 'nav_ledger': 'Bilans publiczny', 'nav_depr': 'Krzywe wartości', 'car_eye': 'Wg modelu', 'car_h': 'Utrata wartości aut wg modelu', 'car_lede': 'Krzywe wartość-wiek per model z polskich ofert prywatnych (najczęściej wystawiane modele). Kropki to mediany, pasmo to P25–P75, linia to dopasowanie. Patrz na kształt: ile wartości utrzymuje dany model.', 'car_none': 'Brak krzywych dla aut.'}}
 
 # Plain (non-f-string) JS — single braces, no escaping. `AGG` is prepended by
 # the renderer. This draws every chart client-side from the embedded aggregates.
@@ -279,13 +288,42 @@ document.querySelector("#classes").innerHTML = present.map((cc,i)=>{
     </div>`;
   }).join("");
 })();
+
+// --- car depreciation gallery (self-contained, reuses chart()) ---
+(function(){
+  const host = document.querySelector("#carmodels");
+  if(!host || typeof AGG_CAR === "undefined") return;
+  const VIO = "#9d7bff";
+  const tc = s => (s||"").replace(/(^|[\s-])\w/g, c => c.toUpperCase());
+  const k5 = pts => { const p = pts.find(p=>p.age===5); return p ? Math.round(p.retained_pct)+"%" : "·"; };
+  const ms = Object.entries(AGG_CAR.models||{})
+    .filter(([n,m]) => m.points && m.points.length)
+    .sort((a,b) => (b[1].n_samples||0)-(a[1].n_samples||0));
+  host.innerHTML = ms.length ? ms.map(([name,a],i)=>{
+    const pts=a.points;
+    const mini = chart([{color:VIO, band:pts.map(p=>[p.age,p.p25,p.p75]), dots:pts.map(p=>[p.age,p.median]), line:pts.map(p=>[p.age,p.smooth])}], {h:240});
+    return `<div class="card cls reveal" style="--accent:${VIO}; animation-delay:${(0.02*i).toFixed(2)}s"><h3 style="font-size:1.1rem">${tc(name)}</h3><p class="sub">${a.fuel||"—"} · anchor ${a.anchor.toLocaleString("pl-PL")} PLN · kept 5y ${k5(pts)} · n=${a.n_samples}</p>${mini}</div>`;
+  }).join("") : `<p class="lede">${_t("car_none")||"No car curves yet."}</p>`;
+})();
+function applyVeh(){
+  const car = (typeof UI!=="undefined") && UI.veh==="car";
+  const mo = document.querySelector("#motoSecs"), ca = document.querySelector("#carSecs");
+  if(mo) mo.style.display = car ? "none" : "";
+  if(ca) ca.style.display = car ? "" : "none";
+  const dek = document.querySelector("#dek");
+  if(dek) dek.innerHTML = (_t(car?"dek_car":"dek_moto")) || dek.innerHTML;
+}
+window.addEventListener("uichange", applyVeh);
+applyVeh();
+
 """
 
 
-def _render_html(agg: dict) -> str:
+def _render_html(agg: dict, car_agg: dict | None = None) -> str:
+    car_agg = car_agg or {"meta": {}, "models": {}}
     meta = agg.get("meta", {})
     cov = agg.get("coverage", {})
-    has_data = bool(agg.get("classes"))
+    has_data = bool(agg.get("classes")) or bool(car_agg.get("models"))
     sample = bool(meta.get("sample"))
     sample_banner = (
         '<p class="sample">⚠ SAMPLE DATA — generated for layout preview. The live page '
@@ -295,6 +333,7 @@ def _render_html(agg: dict) -> str:
     )
     year = meta.get("current_year", "—")
     config = json.dumps(agg, ensure_ascii=False)
+    car_config = json.dumps(car_agg, ensure_ascii=False)
 
     body = (
         _data_sections()
@@ -311,14 +350,15 @@ def _render_html(agg: dict) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Motorcycle depreciation · PL used market</title>
 {_FONTS}
-<style>{_STYLE}</style>
+<style>{_STYLE}{ui.SELECTOR_CSS}</style>
 </head>
 <body>
 <div class="wrap">
 <header class="reveal">
+  {ui.selector_bar()}
   <p class="kicker">Polish used market · reference year {year}</p>
-  <h1>How fast a<br>bike bleeds value</h1>
-  <p class="dek">Cross-sectional depreciation curves by engine class, read off
+  <h1 data-i18n-html="h1">How fast a<br>bike bleeds value</h1>
+  <p class="dek" id="dek" data-i18n="dek_moto">Cross-sectional depreciation curves by engine class, read off
   private-seller listings and smoothed with weighted isotonic regression.</p>
   <div class="redline"></div>
   <div class="chips">
@@ -329,9 +369,9 @@ def _render_html(agg: dict) -> str:
   </div>
   {sample_banner}
   <nav class="nav">
-    <a href="cost.html">Personal cost</a>
-    <a href="index.html">Public-money ledger</a>
-    <a href="depreciation.html" class="here">Depreciation curves</a>
+    <a href="cost.html" data-i18n="nav_cost">Personal cost</a>
+    <a href="index.html" data-i18n="nav_ledger">Public-money ledger</a>
+    <a href="depreciation.html" class="here" data-i18n="nav_depr">Depreciation curves</a>
   </nav>
 </header>
 {body}
@@ -343,11 +383,17 @@ def _render_html(agg: dict) -> str:
 """
     if not has_data:
         return head + "</body>\n</html>\n"
-    return head + "<script>\nconst AGG = " + config + ";\n" + _JS + "</script>\n</body>\n</html>\n"
+    return (
+        head
+        + "<script>\nconst AGG = " + config + ";\nconst AGG_CAR = " + car_config
+        + ";\nwindow.T = " + json.dumps(STRINGS, ensure_ascii=False) + ";\n"
+        + ui.SELECTOR_JS + "\n" + _JS + "</script>\n</body>\n</html>\n"
+    )
 
 
 def _data_sections() -> str:
     return """
+<div id="motoSecs">
 <section class="reveal" style="animation-delay:.08s">
   <p class="eyebrow">Figure 01</p>
   <h2>Price against age</h2>
@@ -395,4 +441,13 @@ def _data_sections() -> str:
   value it keeps), not the absolute złoty.</p>
   <div class="grid" id="models"></div>
 </section>
+</div>
+<div id="carSecs" style="display:none">
+<section class="reveal">
+  <p class="eyebrow" data-i18n="car_eye">By model</p>
+  <h2 data-i18n="car_h">Car depreciation by model</h2>
+  <p class="lede" data-i18n="car_lede">Per-model value-vs-age curves from PL private-seller car listings — read the shape: how much value each keeps.</p>
+  <div class="grid" id="carmodels"></div>
+</section>
+</div>
 """

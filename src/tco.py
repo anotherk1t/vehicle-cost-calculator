@@ -434,7 +434,6 @@ const CARS = (typeof AGG_CAR !== "undefined") ? AGG_CAR : {models:{}, fuels:{}};
 const MOTO = (typeof AGG_MOTO !== "undefined") ? AGG_MOTO : {categories:{}, models:{}};
 const isCar = () => UI.veh === "car";
 const A = () => isCar() ? CARS : MOTO;
-const fmt = (t, v) => (t || "").replace(/\{(\w+)\}/g, (_, k) => (v[k] != null ? v[k] : ""));
 const titlecase = s => (s || "").replace(/(^|[\s-])\w/g, c => c.toUpperCase());
 
 const state = {grp:null, model:null, age:5, hold:3, km:8000, price:null,

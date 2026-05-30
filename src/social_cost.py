@@ -37,6 +37,8 @@ from __future__ import annotations
 import json
 import logging
 import os
+
+from src import ui
 from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
@@ -443,6 +445,41 @@ footer{margin-top:3.4rem; padding-top:1.4rem; border-top:1px solid var(--line);
 """
 
 
+STRINGS: dict[str, dict[str, str]] = {
+    "en": {
+        "veh_moto": "Moto", "veh_car": "Car",
+        "h1": "Who pays<br>for your ride?",
+        "dek": "Every kilometre you drive, you hand the state some tax and impose some cost on everyone else. This reconciles the two — and shows the share of your own footprint you actually cover.",
+        "nav_cost": "Personal cost", "nav_ledger": "Public-money ledger", "nav_depr": "Depreciation curves",
+        "lbl_vehicle": "Vehicle", "lbl_km": "Distance per year", "km_year": "km / year",
+        "lbl_congestion": "Where you drive (congestion)", "assumptions": "Assumptions — adjust the model",
+        "verdict_head": "The verdict — share of your road footprint you pay for",
+        "credit_h": "What you pay the state", "debit_h": "What you cost society",
+        "ext_accidents": "Crashes", "ext_congestion": "Congestion", "ext_climate": "Climate (CO₂)",
+        "ext_air": "Air pollution", "ext_noise": "Noise", "ext_wtt": "Energy supply", "ext_habitat": "Land & habitat",
+        "cr_fuel": "Fuel tax", "cr_reg": "Registration & przegląd", "cr_sub": "Purchase subsidy (amortised)",
+        "say_none": "No measurable footprint.",
+        "say_recipient": "The state spends more <b>on</b> you than you cost it — a net <b>recipient</b> of public money, while your footprint stays {ext}/yr.",
+        "say_cover": "You cover <b>{cov}%</b> of the <b>{ext}/yr</b> you cost everyone else. The remaining <b>{net}/yr</b> is carried by the public across {km} km.",
+    },
+    "pl": {
+        "veh_moto": "Moto", "veh_car": "Auto",
+        "h1": "Kto płaci<br>za Twoją jazdę?",
+        "dek": "Za każdy przejechany kilometr płacisz państwu podatek i nakładasz koszt na resztę. To zestawia jedno z drugim — i pokazuje, jaką część własnego śladu faktycznie pokrywasz.",
+        "nav_cost": "Koszt osobisty", "nav_ledger": "Bilans publiczny", "nav_depr": "Krzywe wartości",
+        "lbl_vehicle": "Pojazd", "lbl_km": "Dystans rocznie", "km_year": "km / rok",
+        "lbl_congestion": "Gdzie jeździsz (zatłoczenie)", "assumptions": "Założenia — dostosuj model",
+        "verdict_head": "Werdykt — jaką część swojego śladu drogowego pokrywasz",
+        "credit_h": "Ile płacisz państwu", "debit_h": "Ile kosztujesz społeczeństwo",
+        "ext_accidents": "Wypadki", "ext_congestion": "Zatłoczenie", "ext_climate": "Klimat (CO₂)",
+        "ext_air": "Zanieczyszczenie powietrza", "ext_noise": "Hałas", "ext_wtt": "Dostawa energii", "ext_habitat": "Ziemia i środowisko",
+        "cr_fuel": "Podatek paliwowy", "cr_reg": "Rejestracja i przegląd", "cr_sub": "Dopłata do zakupu (amortyzowana)",
+        "say_none": "Brak mierzalnego śladu.",
+        "say_recipient": "Państwo wydaje na Ciebie więcej niż Ty kosztujesz — jesteś netto <b>beneficjentem</b> publicznych pieniędzy, a Twój ślad to {ext}/rok.",
+        "say_cover": "Pokrywasz <b>{cov}%</b> z <b>{ext}/rok</b>, które kosztujesz innych. Pozostałe <b>{net}/rok</b> ponosi ogół na {km} km.",
+    },
+}
+
 # Vehicle-aware + i18n ledger JS (raw, single braces). CFG/UI/_t/fmt supplied.
 _LEDGER_JS = r"""
 const PLN = n => (n<0?"−":"") + Math.abs(Math.round(n)).toLocaleString("pl-PL") + " zł";
@@ -524,48 +561,52 @@ buildModes();
 
 def _render_html(*, year: int) -> str:
     config = _client_config()
+    selector_bar = ui.selector_bar()
+    strings_json = json.dumps(STRINGS, ensure_ascii=False)
     congestion_opts = "".join(
         f'<option value="{k}"{" selected" if k == "mixed" else ""}>{p["label"]} · {p["hint"]}</option>'
         for k, p in CONGESTION_PRESETS.items()
     )
 
-    return f"""<!doctype html>
+    return (
+        f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>What the road costs · your public ledger · PL</title>
 {_FONTS}
-<style>{_STYLE}</style>
+<style>{_STYLE}{ui.SELECTOR_CSS}</style>
 </head>
 <body>
 <div class="wrap">
 <header class="reveal">
+  {selector_bar}
   <p class="kicker">Poland · personal road ledger · {year}</p>
-  <h1>Who pays<br>for your ride?</h1>
-  <p class="dek">Every kilometre you drive, you hand the state some tax and impose
+  <h1 data-i18n-html="h1">Who pays<br>for your ride?</h1>
+  <p class="dek" data-i18n="dek">Every kilometre you drive, you hand the state some tax and impose
   some cost on everyone else. This reconciles the two — and shows the share of
   your own footprint you actually cover.</p>
   <div class="rule"></div>
   <nav class="nav">
-    <a href="cost.html">Personal cost</a>
-    <a href="index.html" class="here">Public-money ledger</a>
-    <a href="depreciation.html">Depreciation curves</a>
+    <a href="cost.html" data-i18n="nav_cost">Personal cost</a>
+    <a href="index.html" class="here" data-i18n="nav_ledger">Public-money ledger</a>
+    <a href="depreciation.html" data-i18n="nav_depr">Depreciation curves</a>
   </nav>
 
   <div class="controls">
     <div class="field">
-      <label>Vehicle</label>
-      <div class="modes" id="modes">{mode_buttons}</div>
+      <label data-i18n="lbl_vehicle">Vehicle</label>
+      <div class="modes" id="modes"></div>
     </div>
     <div class="row">
       <div class="field">
-        <label>Distance per year</label>
-        <div class="kmline"><b class="mono" id="kmval">12 000</b><span>km / year</span></div>
+        <label data-i18n="lbl_km">Distance per year</label>
+        <div class="kmline"><b class="mono" id="kmval">12 000</b><span data-i18n="km_year">km / year</span></div>
         <input type="range" id="km" min="1000" max="40000" step="500" value="12000">
       </div>
       <div class="field">
-        <label>Where you drive (congestion)</label>
+        <label data-i18n="lbl_congestion">Where you drive (congestion)</label>
         <select id="congestion">{congestion_opts}</select>
       </div>
     </div>
@@ -573,7 +614,7 @@ def _render_html(*, year: int) -> str:
 </header>
 
 <div class="verdict reveal" style="animation-delay:.08s">
-  <div class="head">The verdict — share of your road footprint you pay for</div>
+  <div class="head" data-i18n="verdict_head">The verdict — share of your road footprint you pay for</div>
   <div class="bignum mono mid" id="coverage">—</div>
   <p class="say" id="verdictSay"></p>
   <div class="scale" id="scale">
@@ -589,13 +630,13 @@ def _render_html(*, year: int) -> str:
 
 <div class="ledger reveal" style="animation-delay:.12s">
   <div class="col credit">
-    <h3>What you pay the state</h3>
+    <h3 data-i18n="credit_h">What you pay the state</h3>
     <p class="csub">akcyza · opłata paliwowa · VAT · fees − subsidy</p>
     <div id="creditItems"></div>
     <div class="sum"><span>Per year</span><span class="v mono" id="creditTotal">—</span></div>
   </div>
   <div class="col debit">
-    <h3>What you cost society</h3>
+    <h3 data-i18n="debit_h">What you cost society</h3>
     <p class="csub">EC/CE Delft external-cost coefficients</p>
     <div id="debitItems"></div>
     <div class="sum"><span>Per year</span><span class="v mono" id="debitTotal">—</span></div>
@@ -603,7 +644,7 @@ def _render_html(*, year: int) -> str:
 </div>
 
 <details class="adv reveal" style="animation-delay:.16s">
-  <summary>Assumptions — adjust the model</summary>
+  <summary data-i18n="assumptions">Assumptions — adjust the model</summary>
   <div class="advgrid">
     <div class="field"><label>EUR → PLN rate</label>
       <input type="number" id="eur" step="0.01" value="4.30"></div>
@@ -655,103 +696,7 @@ def _render_html(*, year: int) -> str:
   <div>No marketplace data used · public coefficients only.</div>
 </footer>
 </div>
-
-<script>
-const CFG = {config};
-const PLN = n => (n<0?"−":"") + Math.abs(Math.round(n)).toLocaleString("pl-PL") + " zł";
-const $ = id => document.getElementById(id);
-
-const state = {{mode:"car_petrol", km:12000, congestion:"mixed",
-  eur:CFG.eurPlnDefault, vat:true, subsidy:18750, crash:"point"}};
-
-function fuelTaxPerUnit(type, vat){{
-  const r = CFG.fuelTax[type]; let t = r.specific;
-  if(vat) t += r.pump * CFG.fuelVat / (1 + CFG.fuelVat);
-  return t;
-}}
-
-function compute(){{
-  const m = CFG.modes[state.mode];
-  const factor = CFG.congestionPresets[state.congestion].factor;
-  const ext = [];
-  for(const [key,label] of CFG.externalComponents){{
-    let cents = m.external[key];
-    if(key==="congestion") cents *= factor;
-    if(key==="accidents" && m.crash_band && state.crash!=="point")
-      cents = state.crash==="low" ? m.crash_band[0] : m.crash_band[1];
-    const pln = cents/100 * state.eur * state.km;
-    if(pln) ext.push({{key,label,pln}});
-  }}
-  const extTotal = ext.reduce((a,i)=>a+i.pln,0);
-
-  const f = m.fuel;
-  const taxUnit = fuelTaxPerUnit(f.type, state.vat);
-  const cred = [
-    {{key:"fuel_tax", label:"Fuel tax", pln: taxUnit*f.per100/100*state.km}},
-    {{key:"reg", label:"Registration & przegląd", pln: CFG.registration}},
-  ];
-  if(f.type==="electric" && state.subsidy)
-    cred.push({{key:"subsidy", label:"Purchase subsidy (amortised)",
-      pln: -(state.subsidy/CFG.evSubsidyHoldYears)}});
-  const credTotal = cred.reduce((a,i)=>a+i.pln,0);
-
-  return {{ext, extTotal, cred, credTotal,
-    coverage: extTotal ? 100*credTotal/extTotal : null,
-    net: extTotal - credTotal}};
-}}
-
-function bars(items, total, el, negClass){{
-  const peak = Math.max(...items.map(i=>Math.abs(i.pln)), 1);
-  el.innerHTML = items.map(i=>{{
-    const neg = i.pln<0;
-    return `<div class="item">
-      <div class="top"><span>${{i.label}}</span>
-        <span class="v ${{neg?'neg':''}}">${{PLN(i.pln)}}</span></div>
-      <div class="meter"><i style="width:${{Math.abs(i.pln)/peak*100}}%"></i></div>
-    </div>`;
-  }}).join("");
-}}
-
-function render(){{
-  const r = compute();
-  bars(r.ext, r.extTotal, $("debitItems"));
-  bars(r.cred, r.credTotal, $("creditItems"));
-  $("debitTotal").textContent = PLN(r.extTotal) + " /yr";
-  $("creditTotal").textContent = PLN(r.credTotal) + " /yr";
-
-  const cov = r.coverage;
-  const covEl = $("coverage"), say = $("verdictSay");
-  covEl.className = "bignum mono " + (cov===null?"mid":cov<0?"bad":cov<60?"bad":cov<100?"mid":"good");
-  covEl.textContent = cov===null ? "—" : Math.round(cov)+"%";
-
-  const paid = Math.max(0, Math.min(100, cov===null?0:cov));
-  $("scalePaid").style.width = paid+"%";
-  $("scaleOwed").style.width = (100-paid)+"%";
-
-  const km = state.km.toLocaleString("pl-PL");
-  if(cov===null) say.innerHTML = "No measurable footprint.";
-  else if(cov<0) say.innerHTML = `The state spends more <b>on</b> you than you cost it. After the purchase grant you're a net <b>recipient</b> of public money — a deliberate subsidy, while your road footprint stays ${{PLN(r.extTotal)}}/yr.`;
-  else say.innerHTML = `You cover <b>${{Math.round(cov)}}%</b> of the <b>${{PLN(r.extTotal)}}/yr</b> you cost everyone else. The remaining <b>${{PLN(r.net)}}/yr</b> is carried by the public — drivers and non-drivers alike — across ${{km}} km.`;
-
-  $("modeNote").textContent = CFG.modes[state.mode].notes;
-}}
-
-$("modes").addEventListener("click", e=>{{
-  const b = e.target.closest(".mode-btn"); if(!b) return;
-  state.mode = b.dataset.mode;
-  document.querySelectorAll(".mode-btn").forEach(x=>x.setAttribute("aria-pressed", x===b));
-  render();
-}});
-$("km").addEventListener("input", e=>{{ state.km=+e.target.value;
-  $("kmval").textContent = state.km.toLocaleString("pl-PL"); render(); }});
-$("congestion").addEventListener("change", e=>{{ state.congestion=e.target.value; render(); }});
-$("eur").addEventListener("input", e=>{{ state.eur=+e.target.value||CFG.eurPlnDefault; render(); }});
-$("subsidy").addEventListener("input", e=>{{ state.subsidy=+e.target.value||0; render(); }});
-$("crash").addEventListener("change", e=>{{ state.crash=e.target.value; render(); }});
-$("vat").addEventListener("change", e=>{{ state.vat=e.target.checked; render(); }});
-
-render();
-</script>
-</body>
-</html>
 """
+        + "<script>\nconst CFG = " + config + ";\nwindow.T = " + strings_json + ";\n"
+        + ui.SELECTOR_JS + "\n" + _LEDGER_JS + "</script>\n</body>\n</html>\n"
+    )

@@ -41,6 +41,7 @@ SELECTOR_CSS = """
 SELECTOR_JS = r"""
 const UI = { lang: localStorage.getItem("ui_lang") || "en", veh: localStorage.getItem("ui_veh") || "moto" };
 function _t(key){ return (window.T && T[UI.lang] && T[UI.lang][key]); }
+function fmt(t, v){ return (t || "").replace(/\{(\w+)\}/g, (_, k) => (v[k] != null ? v[k] : "")); }
 function applyLang(){
   document.querySelectorAll("[data-i18n]").forEach(el => { const t=_t(el.dataset.i18n); if(t!=null) el.textContent=t; });
   document.querySelectorAll("[data-i18n-html]").forEach(el => { const t=_t(el.dataset.i18nHtml); if(t!=null) el.innerHTML=t; });
