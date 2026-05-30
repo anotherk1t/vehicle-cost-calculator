@@ -1,3 +1,7 @@
+readme coming soon
+
+<!--
+
 # mobility-cost-pl
 
 A small, honest model of what a vehicle costs in Poland — to you, and to everyone
@@ -69,3 +73,6 @@ and entirely off the data engine's infrastructure.
 - PL 2026 fuel excise (akcyza), opłata paliwowa, VAT.
 
 No marketplace data is used anywhere in this repo.
+
+
+-->
