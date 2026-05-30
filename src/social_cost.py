@@ -451,6 +451,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "h1": "Who pays<br>for your ride?",
         "dek": "Every kilometre you drive, you hand the state some tax and impose some cost on everyone else. This reconciles the two — and shows the share of your own footprint you actually cover.",
         "nav_cost": "Personal cost", "nav_ledger": "Public-money ledger", "nav_depr": "Depreciation curves",
+        "nav_practice": "In practice",
         "lbl_vehicle": "Vehicle", "lbl_km": "Distance per year", "km_year": "km / year",
         "lbl_congestion": "Where you drive (congestion)", "assumptions": "Assumptions — adjust the model",
         "verdict_head": "The verdict — share of your road footprint you pay for",
@@ -467,6 +468,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "h1": "Kto płaci<br>za Twoją jazdę?",
         "dek": "Za każdy przejechany kilometr płacisz państwu podatek i nakładasz koszt na resztę. To zestawia jedno z drugim — i pokazuje, jaką część własnego śladu faktycznie pokrywasz.",
         "nav_cost": "Koszt osobisty", "nav_ledger": "Bilans publiczny", "nav_depr": "Krzywe wartości",
+        "nav_practice": "W praktyce",
         "lbl_vehicle": "Pojazd", "lbl_km": "Dystans rocznie", "km_year": "km / rok",
         "lbl_congestion": "Gdzie jeździsz (zatłoczenie)", "assumptions": "Założenia — dostosuj model",
         "verdict_head": "Werdykt — jaką część swojego śladu drogowego pokrywasz",
@@ -592,6 +594,7 @@ def _render_html(*, year: int) -> str:
     <a href="cost.html" data-i18n="nav_cost">Personal cost</a>
     <a href="index.html" class="here" data-i18n="nav_ledger">Public-money ledger</a>
     <a href="depreciation.html" data-i18n="nav_depr">Depreciation curves</a>
+    <a href="practice.html" data-i18n="nav_practice">In practice</a>
   </nav>
 
   <div class="controls">

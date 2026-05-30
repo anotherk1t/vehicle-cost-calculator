@@ -838,6 +838,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "h1": "The sticker is<br>the small print",
         "dek": "A vehicle's real cost isn't its price — it's what it loses, burns and bills you every year. This adds it all up, per kilometre, on top of the depreciation we actually measure.",
         "nav_cost": "Personal cost", "nav_ledger": "Public-money ledger", "nav_depr": "Depreciation curves",
+        "nav_practice": "In practice",
         "foot1": "METHOD · depreciation read off cross-sectional value-vs-age curves, scaled to your price. Fuel/service/fees are coefficient models, user-adjustable.",
         "foot2": "DATA · derived aggregate curves only — no listings reproduced. Insurance is never modelled (you paste a quote).",
         "category": "Category", "make": "Make", "model_label": "Model", "optional": "optional",
@@ -866,6 +867,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "h1": "Cena to<br>tylko nagłówek",
         "dek": "Prawdziwy koszt pojazdu to nie cena — to ile traci, spala i kosztuje co roku. To podlicza całość, na kilometr, na bazie zmierzonej utraty wartości.",
         "nav_cost": "Koszt osobisty", "nav_ledger": "Bilans publiczny", "nav_depr": "Krzywe wartości",
+        "nav_practice": "W praktyce",
         "foot1": "METODA · utrata wartości odczytana z przekrojowych krzywych wartość-wiek, skalowana do Twojej ceny. Paliwo/serwis/opłaty to modele współczynnikowe, edytowalne.",
         "foot2": "DANE · tylko pochodne krzywe zbiorcze — żadne ogłoszenia nie są kopiowane. Ubezpieczenia nie modelujemy (wklejasz wycenę).",
         "category": "Kategoria", "make": "Marka", "model_label": "Model", "optional": "opcjonalnie",
@@ -928,6 +930,7 @@ def _render_html(agg: dict, car_agg: dict | None = None) -> str:
     <a href="cost.html" class="here" data-i18n="nav_cost">Personal cost</a>
     <a href="index.html" data-i18n="nav_ledger">Public-money ledger</a>
     <a href="depreciation.html" data-i18n="nav_depr">Depreciation curves</a>
+    <a href="practice.html" data-i18n="nav_practice">In practice</a>
   </nav>
 """
 

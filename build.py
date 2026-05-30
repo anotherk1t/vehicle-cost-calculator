@@ -19,12 +19,14 @@ import os
 
 from src.depreciation import render_depreciation
 from src.social_cost import render_social_cost
+from src.stage3 import render_stage3
 from src.tco import render_tco
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
 OUTPUT_DIR = "public"
 AGGREGATES = os.path.join("data", "aggregates.json")
+STAGE3_BUDGET = os.path.join("data", "stage3_gdansk_transport.json")
 
 
 def main() -> None:
@@ -44,7 +46,12 @@ def main() -> None:
     else:
         logging.warning("%s missing — skipping depreciation page", AGGREGATES)
 
-    # Surface 3 (map) lands here next.
+    # Surface 3 — "In practice": Gdańsk transport budget (roads vs transit) + the
+    # named-projects map. Pure public-finance data (GUS BDL), no marketplace rows.
+    if os.path.exists(STAGE3_BUDGET):
+        render_stage3(budget_path=STAGE3_BUDGET, output_dir=OUTPUT_DIR, filename="practice.html")
+    else:
+        logging.warning("%s missing — skipping Stage 3 page", STAGE3_BUDGET)
 
 
 if __name__ == "__main__":
