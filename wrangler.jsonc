@@ -3,6 +3,7 @@
   // (yours are: yellow-mud-0e8b, misty-darkness-3d19, jakosdojade) and change
   // it if the domain is wired to a different one.
   "name": "yellow-mud-0e8b",
+  "account_id": "9ff0105db10d3e0788b3e8cf8f033bbe",
   "compatibility_date": "2026-04-23",
   "main": "worker/index.js",
   "assets": {

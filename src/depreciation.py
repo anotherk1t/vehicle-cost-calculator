@@ -255,6 +255,30 @@ document.querySelector("#classes").innerHTML = present.map((cc,i)=>{
     <table><thead><tr><th>age</th><th>fit PLN</th><th>kept</th><th>depr/yr</th><th>med km</th><th>n</th></tr></thead><tbody>${rows}</tbody></table>
   </div>`;
 }).join("");
+
+// Per-model gallery — the precise tier (make+model), richest data first.
+(function(){
+  const host = document.querySelector("#models");
+  if(!host) return;
+  const VIO = "#9d7bff";
+  const entries = Object.entries(AGG.models||{})
+    .filter(([n,m]) => m.points && m.points.length)
+    .sort((a,b) => (b[1].n_samples||0)-(a[1].n_samples||0));
+  if(!entries.length){ host.innerHTML = `<p class="lede">No per-model curves yet — needs more data per model.</p>`; return; }
+  const k5 = pts => { const p = pts.find(p=>p.age===5); return p ? Math.round(p.retained_pct)+"%" : "·"; };
+  host.innerHTML = entries.map(([name,a],i)=>{
+    const pts=a.points, low=a.reliable===false;
+    const mini = chart([{color:VIO,
+      band: pts.map(p=>[p.age,p.p25,p.p75]),
+      dots: pts.map(p=>[p.age,p.median]),
+      line: pts.map(p=>[p.age,p.smooth])}], {h:240});
+    const badge = low ? `<span class="lowbadge">limited</span>` : "";
+    return `<div class="card cls reveal${low?' low':''}" style="--accent:${VIO}; animation-delay:${(0.03*i).toFixed(2)}s">
+      <h3 style="font-size:1.15rem">${name} ${badge}</h3>
+      <p class="sub">${a.category||"—"} · anchor ${a.anchor.toLocaleString("pl-PL")} PLN · kept 5y ${k5(pts)} · n=${a.n_samples}</p>${mini}
+    </div>`;
+  }).join("");
+})();
 """
 
 
@@ -361,5 +385,14 @@ def _data_sections() -> str:
   <p class="eyebrow">By engine class</p>
   <h2>Class breakdowns</h2>
   <div class="grid" id="classes"></div>
+</section>
+
+<section class="reveal">
+  <p class="eyebrow">By model</p>
+  <h2>Model-level curves</h2>
+  <p class="lede">The precise tier — depreciation for a single make + model, where there's
+  enough data. Includes dealer listings for coverage, so read the <b>shape</b> (how much
+  value it keeps), not the absolute złoty.</p>
+  <div class="grid" id="models"></div>
 </section>
 """

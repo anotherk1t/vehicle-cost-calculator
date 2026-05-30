@@ -443,13 +443,87 @@ footer{margin-top:3.4rem; padding-top:1.4rem; border-top:1px solid var(--line);
 """
 
 
+# Vehicle-aware + i18n ledger JS (raw, single braces). CFG/UI/_t/fmt supplied.
+_LEDGER_JS = r"""
+const PLN = n => (n<0?"−":"") + Math.abs(Math.round(n)).toLocaleString("pl-PL") + " zł";
+const $ = id => document.getElementById(id);
+const modesForVeh = () => Object.entries(CFG.modes).filter(([k,m]) => UI.veh==="car" ? m.kind==="car" : m.kind!=="car");
+
+const state = {mode:null, km:12000, congestion:"mixed", eur:CFG.eurPlnDefault, vat:true, subsidy:18750, crash:"point"};
+
+function fuelTaxPerUnit(type, vat){ const r = CFG.fuelTax[type]; let t = r.specific; if(vat) t += r.pump * CFG.fuelVat/(1+CFG.fuelVat); return t; }
+
+function compute(){
+  const m = CFG.modes[state.mode];
+  const factor = CFG.congestionPresets[state.congestion].factor;
+  const ext = [];
+  for(const [key,label] of CFG.externalComponents){
+    let cents = m.external[key];
+    if(key==="congestion") cents *= factor;
+    if(key==="accidents" && m.crash_band && state.crash!=="point") cents = state.crash==="low" ? m.crash_band[0] : m.crash_band[1];
+    const pln = cents/100 * state.eur * state.km;
+    if(pln) ext.push({key, label:(_t("ext_"+key)||label), pln});
+  }
+  const extTotal = ext.reduce((a,i)=>a+i.pln,0);
+  const f = m.fuel;
+  const taxUnit = fuelTaxPerUnit(f.type, state.vat);
+  const cred = [
+    {key:"fuel_tax", label:(_t("cr_fuel")||"Fuel tax"), pln: taxUnit*f.per100/100*state.km},
+    {key:"reg", label:(_t("cr_reg")||"Registration & przegląd"), pln: CFG.registration},
+  ];
+  if(f.type==="electric" && state.subsidy)
+    cred.push({key:"subsidy", label:(_t("cr_sub")||"Purchase subsidy (amortised)"), pln: -(state.subsidy/CFG.evSubsidyHoldYears)});
+  const credTotal = cred.reduce((a,i)=>a+i.pln,0);
+  return {ext, extTotal, cred, credTotal, coverage: extTotal ? 100*credTotal/extTotal : null, net: extTotal - credTotal};
+}
+
+function bars(items, total, el){
+  const peak = Math.max(...items.map(i=>Math.abs(i.pln)), 1);
+  el.innerHTML = items.map(i=>{
+    const neg = i.pln<0;
+    return `<div class="item"><div class="top"><span>${i.label}</span><span class="v ${neg?'neg':''}">${PLN(i.pln)}</span></div><div class="meter"><i style="width:${Math.abs(i.pln)/peak*100}%"></i></div></div>`;
+  }).join("");
+}
+
+function render(){
+  const r = compute();
+  bars(r.ext, r.extTotal, $("debitItems"));
+  bars(r.cred, r.credTotal, $("creditItems"));
+  $("debitTotal").textContent = PLN(r.extTotal) + " /yr";
+  $("creditTotal").textContent = PLN(r.credTotal) + " /yr";
+  const cov = r.coverage, covEl = $("coverage"), say = $("verdictSay");
+  covEl.className = "bignum mono " + (cov===null?"mid":cov<0?"bad":cov<60?"bad":cov<100?"mid":"good");
+  covEl.textContent = cov===null ? "—" : Math.round(cov)+"%";
+  const paid = Math.max(0, Math.min(100, cov===null?0:cov));
+  $("scalePaid").style.width = paid+"%"; $("scaleOwed").style.width = (100-paid)+"%";
+  const km = state.km.toLocaleString("pl-PL");
+  if(cov===null) say.innerHTML = _t("say_none")||"No measurable footprint.";
+  else if(cov<0) say.innerHTML = fmt(_t("say_recipient")||"The state spends more <b>on</b> you than you cost it — a net <b>recipient</b> of public money, while your footprint stays {ext}/yr.", {ext:PLN(r.extTotal)});
+  else say.innerHTML = fmt(_t("say_cover")||"You cover <b>{cov}%</b> of the <b>{ext}/yr</b> you cost everyone else. The remaining <b>{net}/yr</b> is carried by the public across {km} km.", {cov:Math.round(cov), ext:PLN(r.extTotal), net:PLN(r.net), km});
+  $("modeNote").textContent = CFG.modes[state.mode].notes;
+}
+
+function buildModes(){
+  const ms = modesForVeh();
+  if(!ms.find(([k])=>k===state.mode)) state.mode = ms[0][0];
+  $("modes").innerHTML = ms.map(([k,m])=>`<button class="mode-btn" data-mode="${k}" aria-pressed="${k===state.mode}">${m.label}</button>`).join("");
+  render();
+}
+
+$("modes").addEventListener("click", e=>{ const b=e.target.closest(".mode-btn"); if(!b) return; state.mode=b.dataset.mode; document.querySelectorAll(".mode-btn").forEach(x=>x.setAttribute("aria-pressed", x===b)); render(); });
+$("km").addEventListener("input", e=>{ state.km=+e.target.value; $("kmval").textContent = state.km.toLocaleString("pl-PL"); render(); });
+$("congestion").addEventListener("change", e=>{ state.congestion=e.target.value; render(); });
+$("eur").addEventListener("input", e=>{ state.eur=+e.target.value||CFG.eurPlnDefault; render(); });
+$("subsidy").addEventListener("input", e=>{ state.subsidy=+e.target.value||0; render(); });
+$("crash").addEventListener("change", e=>{ state.crash=e.target.value; render(); });
+$("vat").addEventListener("change", e=>{ state.vat=e.target.checked; render(); });
+window.addEventListener("uichange", buildModes);
+buildModes();
+"""
+
+
 def _render_html(*, year: int) -> str:
     config = _client_config()
-    mode_buttons = "".join(
-        f'<button class="mode-btn" role="button" aria-pressed="{"true" if k == "car_petrol" else "false"}" '
-        f'data-mode="{k}">{m["label"]}</button>'
-        for k, m in MODES.items()
-    )
     congestion_opts = "".join(
         f'<option value="{k}"{" selected" if k == "mixed" else ""}>{p["label"]} · {p["hint"]}</option>'
         for k, p in CONGESTION_PRESETS.items()

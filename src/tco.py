@@ -28,10 +28,13 @@ import json
 import logging
 import os
 
+from src import ui
+
 logger = logging.getLogger(__name__)
 
 DEFAULT_OUTPUT_DIR = "public"
 DEFAULT_AGGREGATES = os.path.join("data", "aggregates.json")
+DEFAULT_CAR_AGGREGATES = os.path.join("data", "cars_aggregates.json")
 
 # --- coefficient constants (mirrored by the page's JS) -----------------------
 # Everything here is a default the user can override in the UI. The numbers are
@@ -44,50 +47,44 @@ REGISTRATION_PLN_YR: float = 99.0  # przegląd + recurring registration, amortis
 SERVICE_AGE_K: float = 0.045  # the wear reserve grows ~4.5% per year of bike age
 SERVICE_BAND: float = 0.35  # ± on the maintenance/wear reserve → the cost band
 
-# Per engine-class defaults. Keys MUST match the aggregates `cc_order` buckets so
-# a class selection maps straight onto a depreciation curve.
-CLASS_DEFAULTS: dict[str, dict] = {
-    "<=125": {
-        "label": "≤125 cc",
-        "tag": "commuter / A1",
-        "fuel_per100": 2.8,  # litres / 100 km
-        "service_per1000": 50,  # zł reserve per 1000 km, at age 0
-        "insurance_yr": 320,  # OC ballpark; user pastes a real quote
-        "kind": "scooter",
-    },
-    "126-300": {
-        "label": "126–300 cc",
-        "tag": "first big bike",
-        "fuel_per100": 3.5,
-        "service_per1000": 70,
-        "insurance_yr": 480,
-        "kind": "light",
-    },
-    "301-600": {
-        "label": "301–600 cc",
-        "tag": "middleweight",
-        "fuel_per100": 4.2,
-        "service_per1000": 95,
-        "insurance_yr": 640,
-        "kind": "mid",
-    },
-    "601-900": {
-        "label": "601–900 cc",
-        "tag": "do-it-all",
-        "fuel_per100": 4.9,
-        "service_per1000": 120,
-        "insurance_yr": 820,
-        "kind": "big",
-    },
-    "900+": {
-        "label": "900 cc +",
-        "tag": "litre / tourer",
-        "fuel_per100": 5.6,
-        "service_per1000": 150,
-        "insurance_yr": 1050,
-        "kind": "litre",
-    },
+# Per riding-category defaults (fuel / service / insurance). Keys MUST match the
+# engine's `category` taxonomy so a category selection maps onto its curve, and a
+# specific model inherits its category's coefficients. All user-adjustable in the UI.
+CATEGORY_ORDER: list[str] = [
+    "scooter",
+    "maxi_scooter",
+    "moped",
+    "naked",
+    "sport",
+    "touring",
+    "adventure",
+    "cruiser",
+    "enduro",
+]
+CATEGORY_DEFAULTS: dict[str, dict] = {
+    "moped": {"label": "Moped ≤50", "tag": "city / A", "fuel_per100": 2.5, "service_per1000": 45, "insurance_yr": 300},
+    "scooter": {"label": "Scooter", "tag": "commuter", "fuel_per100": 3.0, "service_per1000": 55, "insurance_yr": 350},
+    "maxi_scooter": {"label": "Maxi-scooter", "tag": "motorway scooter", "fuel_per100": 4.0, "service_per1000": 90, "insurance_yr": 550},
+    "naked": {"label": "Naked", "tag": "roadster / standard", "fuel_per100": 4.5, "service_per1000": 95, "insurance_yr": 650},
+    "sport": {"label": "Sport", "tag": "supersport", "fuel_per100": 5.2, "service_per1000": 120, "insurance_yr": 950},
+    "touring": {"label": "Touring", "tag": "sport-tourer / GT", "fuel_per100": 5.0, "service_per1000": 110, "insurance_yr": 800},
+    "adventure": {"label": "Adventure", "tag": "ADV / GS-style", "fuel_per100": 4.8, "service_per1000": 120, "insurance_yr": 800},
+    "cruiser": {"label": "Cruiser", "tag": "cruiser / chopper", "fuel_per100": 5.0, "service_per1000": 100, "insurance_yr": 700},
+    "enduro": {"label": "Enduro", "tag": "dual-sport / SM", "fuel_per100": 4.2, "service_per1000": 100, "insurance_yr": 600},
 }
+
+# Car running-cost coefficients, keyed by fuel (the dominant car cost driver).
+# per100 = litres (or kWh for EV) / 100 km; pump = zł per litre (or per kWh).
+CAR_FUEL_DEFAULTS: dict[str, dict] = {
+    "petrol": {"label": "Petrol", "per100": 7.0, "pump": 6.49, "unit": "l"},
+    "diesel": {"label": "Diesel", "per100": 5.5, "pump": 6.59, "unit": "l"},
+    "petrol-lpg": {"label": "LPG", "per100": 9.0, "pump": 2.80, "unit": "l"},
+    "hybrid": {"label": "Hybrid", "per100": 4.8, "pump": 6.49, "unit": "l"},
+    "plugin-hybrid": {"label": "Plug-in hybrid", "per100": 3.5, "pump": 6.49, "unit": "l"},
+    "electric": {"label": "Electric", "per100": 17.0, "pump": 1.10, "unit": "kWh"},
+}
+CAR_SERVICE_PER1000: float = 130.0  # zł reserve / 1000 km (cars run dearer than bikes)
+CAR_INSURANCE_YR: float = 2200.0  # OC/AC ballpark; user pastes a real quote
 
 # Stable colour per cost component (the receipt's ink). Depreciation is the
 # dominant, alarming slice; the modelled costs cool down from there.
@@ -219,7 +216,11 @@ def _client_config() -> str:
     """The coefficient source of truth, serialised for the page's JS."""
     return json.dumps(
         {
-            "classDefaults": CLASS_DEFAULTS,
+            "categoryDefaults": CATEGORY_DEFAULTS,
+            "categoryOrder": CATEGORY_ORDER,
+            "carFuel": CAR_FUEL_DEFAULTS,
+            "carService": CAR_SERVICE_PER1000,
+            "carInsurance": CAR_INSURANCE_YR,
             "componentOrder": COMPONENT_ORDER,
             "componentColors": COMPONENT_COLORS,
             "pumpPetrol": PUMP_PETROL_PLN,
@@ -235,6 +236,7 @@ def _client_config() -> str:
 def render_tco(
     aggregates_path: str | None = None,
     *,
+    car_aggregates_path: str | None = None,
     output_dir: str | None = None,
     filename: str = "cost.html",
 ) -> str:
@@ -257,8 +259,14 @@ def render_tco(
     else:
         logger.warning("%s missing — TCO page will render without curves", aggregates_path)
 
+    car_path = car_aggregates_path or DEFAULT_CAR_AGGREGATES
+    car_agg: dict = {"meta": {}, "models": {}, "fuels": {}}
+    if os.path.exists(car_path):
+        with open(car_path, encoding="utf-8") as f:
+            car_agg = json.load(f)
+
     with open(out_path, "w", encoding="utf-8") as f:
-        f.write(_render_html(agg))
+        f.write(_render_html(agg, car_agg))
     logger.info("Rendered TCO calculator → %s", out_path)
     return out_path
 
@@ -319,6 +327,9 @@ h1{font-family:"Anton",Impact,sans-serif; font-weight:400; text-transform:upperc
 .mode-btn[aria-pressed="true"] small{color:#3a3a3a}
 .heldnote{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--muted); margin:.7rem 0 0}
 .heldnote b{color:var(--amber)}
+.modelsel{width:100%; max-width:420px; font-family:"IBM Plex Mono",monospace; font-size:.9rem;
+  background:var(--panel); color:var(--ink); border:1px solid var(--line); border-radius:8px; padding:.55rem .7rem}
+.modelsel:disabled{opacity:.5}
 .row{display:flex; gap:1.4rem; flex-wrap:wrap}
 .row .field{flex:1; min-width:210px}
 input[type=range]{width:100%; accent-color:var(--violet); cursor:pointer}
@@ -419,16 +430,63 @@ _JS = r"""
 const PLN = n => (n<0?"−":"") + Math.abs(Math.round(n)).toLocaleString("pl-PL") + " zł";
 const $ = id => document.getElementById(id);
 const COL = CFG.componentColors;
-// Only offer classes whose depreciation curve is trustworthy — an unreliable
-// curve (thin/noisy data flagged upstream) would poison the whole calculator.
-// reliable===false is the engine's hold signal; missing flag = treat as ok.
-const present = (AGG.meta.cc_order||[]).filter(cc => AGG.classes[cc] && AGG.classes[cc].points.length && AGG.classes[cc].reliable !== false);
-const held = (AGG.meta.cc_order||[]).filter(cc => AGG.classes[cc] && AGG.classes[cc].points.length && AGG.classes[cc].reliable === false);
+const CARS = (typeof AGG_CAR !== "undefined") ? AGG_CAR : {models:{}, fuels:{}};
+const MOTO = (typeof AGG_MOTO !== "undefined") ? AGG_MOTO : {categories:{}, models:{}};
+const isCar = () => UI.veh === "car";
+const A = () => isCar() ? CARS : MOTO;
+const fmt = (t, v) => (t || "").replace(/\{(\w+)\}/g, (_, k) => (v[k] != null ? v[k] : ""));
+const titlecase = s => (s || "").replace(/(^|[\s-])\w/g, c => c.toUpperCase());
 
-const state = {cls: present[0], age:5, hold:3, km:8000, price:null,
-  pump:CFG.pumpPetrol, insurance:null, service:null, pcc:true};
+const state = {grp:null, model:null, age:5, hold:3, km:8000, price:null,
+  pump:null, insurance:null, service:null, pcc:true};
 
-function curveOf(cls){ return AGG.classes[cls].points.map(p=>({age:p.age, smooth:p.smooth})); }
+// models in a group: a moto category, or (for cars) a make
+function modelsInGroup(g){
+  const models = A().models || {};
+  return Object.entries(models)
+    .filter(([n,m]) => m.points && m.points.length && (isCar() ? n.split(" ")[0]===g : m.category===g))
+    .sort((a,b) => (b[1].n_samples||0)-(a[1].n_samples||0));
+}
+// selectable groups: moto = riding categories with a curve/models; car = makes
+function groups(){
+  if(isCar()){
+    const mk = new Set();
+    for(const k in (CARS.models||{})){ const m=CARS.models[k]; if(m.points && m.points.length) mk.add(k.split(" ")[0]); }
+    return [...mk].sort();
+  }
+  const cats = MOTO.categories || {};
+  return (CFG.categoryOrder||[]).filter(c => CFG.categoryDefaults[c] &&
+    ((cats[c] && cats[c].points && cats[c].points.length) || modelsInGroup(c).length));
+}
+function groupCurve(g){ return isCar() ? null : (MOTO.categories||{})[g]; }  // moto has category curves; cars don't
+function groupLabel(g){ return isCar() ? titlecase(g) : ((CFG.categoryDefaults[g]||{}).label || g); }
+function groupTag(g){ return isCar()
+  ? (modelsInGroup(g).length + " " + (_t("models_word")||"models"))
+  : ((CFG.categoryDefaults[g]||{}).tag || ""); }
+
+// the curve in effect — a specific model when picked, else the group (moto category) curve
+function chosen(){
+  const models = A().models || {};
+  if(state.model && models[state.model]) return models[state.model];
+  return groupCurve(state.grp);
+}
+function curveOf(){ const c=chosen(); return (c && c.points) ? c.points.map(p=>({age:p.age, smooth:p.smooth})) : []; }
+
+// running-cost coefficients: car = by fuel; moto = by category
+function coeffs(){
+  if(isCar()){
+    const m = state.model && CARS.models[state.model];
+    const fuel = (m && m.fuel) || "petrol";
+    const f = (CFG.carFuel||{})[fuel] || (CFG.carFuel||{}).petrol || {per100:7, pump:6.49, label:"Petrol"};
+    return {fuel_per100:f.per100, pump:(state.pump!=null?state.pump:f.pump),
+      service:(state.service!=null?state.service:CFG.carService),
+      insurance:(state.insurance!=null?state.insurance:CFG.carInsurance), fuel, fuelLabel:f.label};
+  }
+  const d = CFG.categoryDefaults[state.grp] || {fuel_per100:4, service_per1000:90, insurance_yr:600};
+  return {fuel_per100:d.fuel_per100, pump:(state.pump!=null?state.pump:CFG.pumpPetrol),
+    service:(state.service!=null?state.service:d.service_per1000),
+    insurance:(state.insurance!=null?state.insurance:d.insurance_yr), fuel:"petrol", fuelLabel:"Petrol"};
+}
 
 function interp(curve, age){
   if(!curve.length) return null;
@@ -445,8 +503,8 @@ function interp(curve, age){
 }
 
 function compute(){
-  const d = CFG.classDefaults[state.cls];
-  const curve = curveOf(state.cls);
+  const co = coeffs();
+  const curve = curveOf();
   const baseNow = interp(curve, state.age);
   const baseLater = interp(curve, state.age + state.hold);
   const paid = state.price!=null ? state.price : baseNow;
@@ -455,16 +513,15 @@ function compute(){
   const deprTotal = Math.max(0, paid - valueEnd);
   const deprYr = state.hold ? deprTotal/state.hold : 0;
 
-  const fuelYr = d.fuel_per100/100 * state.km * state.pump;
-  const svcPer1000 = state.service!=null ? state.service : d.service_per1000;
+  const fuelYr = co.fuel_per100/100 * state.km * co.pump;
   const avgAge = state.age + state.hold/2;
-  const serviceYr = svcPer1000 * (state.km/1000) * (1 + CFG.serviceAgeK*avgAge);
+  const serviceYr = co.service * (state.km/1000) * (1 + CFG.serviceAgeK*avgAge);
   const pccYr = state.pcc ? paid*CFG.pccRate/(state.hold||1) : 0;
   const feesYr = CFG.registration + pccYr;
-  const insurance = state.insurance!=null ? state.insurance : d.insurance_yr;
+  const insurance = co.insurance;
 
   const raw = {depreciation:deprYr, fuel:fuelYr, service:serviceYr, insurance, fees:feesYr};
-  const items = CFG.componentOrder.map(([k,lbl])=>({key:k, label:lbl, pln:raw[k]}));
+  const items = CFG.componentOrder.map(([k,lbl])=>({key:k, label:(_t("comp_"+k)||lbl), pln:raw[k]}));
   const total = items.reduce((a,i)=>a+i.pln,0);
   const band = serviceYr*CFG.serviceBand;
 
@@ -518,10 +575,12 @@ function holdChart(r){
 function render(){
   const r = compute();
   // odometer
-  $("perkm").innerHTML = r.perKm.toFixed(2).replace(".",",") + `<span class="u">zł / km</span>`;
+  const yrW = state.hold>1 ? (_t("years")||"years") : (_t("year")||"year");
+  $("perkm").innerHTML = r.perKm.toFixed(2).replace(".",",") + `<span class="u">${_t("per_km")||"zł / km"}</span>`;
   $("yrnum").textContent = PLN(r.total);
-  $("bandtxt").textContent = `range ${PLN(r.lo)} – ${PLN(r.hi)} /yr`;
-  $("life").innerHTML = `Over <b>${state.hold} year${state.hold>1?"s":""}</b> at <b>${state.km.toLocaleString("pl-PL")} km/yr</b> you'll spend about <b>${PLN(r.lifetime)}</b> — of which <b>${r.deprShare}%</b> is value the bike quietly loses while parked.`;
+  $("bandtxt").textContent = fmt(_t("range_fmt")||"range {lo} – {hi} /yr", {lo:PLN(r.lo), hi:PLN(r.hi)});
+  $("life").innerHTML = fmt(_t("life")||"Over <b>{hold} {yr}</b> at <b>{km} km/yr</b> you'll spend about <b>{life}</b> — of which <b>{share}%</b> is value it loses while parked.",
+    {hold:state.hold, yr:yrW, km:state.km.toLocaleString("pl-PL"), life:PLN(r.lifetime), share:r.deprShare});
 
   // stacked bar + receipt
   const peak = r.total||1;
@@ -538,56 +597,93 @@ function render(){
 
   // hold-window chart
   $("holdchart").innerHTML = holdChart(r);
-  let buy = `You pay <b>${PLN(r.paid)}</b> today; after ${state.hold} year${state.hold>1?"s":""} the curve says it's worth about <b>${PLN(r.valueEnd)}</b>.`;
+  let buy = fmt(_t("buy_pay")||"You pay <b>{paid}</b> today; after {hold} {yr} the curve says it's worth about <b>{end}</b>.",
+    {paid:PLN(r.paid), hold:state.hold, yr:yrW, end:PLN(r.valueEnd)});
   const deprItem = r.items.find(i=>i.key==="depreciation");
   if(deprItem && deprItem.pln < 1){
-    const anchorScaled = (AGG.classes[state.cls].anchor||0) * r.scale;
-    // Flat near the top of the curve on a young bike = the near-new sample is
-    // too thin to resolve real decline (honest), NOT a genuine value floor.
+    const ch = chosen();
+    const anchorScaled = ((ch && ch.anchor) || 0) * r.scale;
     if(state.age <= 4 && anchorScaled && r.valueEnd >= 0.78*anchorScaled)
-      buy += ` <span style="color:var(--amber)">⚠ Near-new depreciation for this class isn't resolved yet — too few young listings, so the curve is flat where it shouldn't be. Treat this as a floor; real loss over these years is likely higher.</span>`;
+      buy += ` <span style="color:var(--amber)">${_t("flat_young")||"⚠ Near-new depreciation here isn't resolved yet — treat this as a floor; real loss is likely higher."}</span>`;
     else
-      buy += ` <span style="color:var(--cyan)">The curve is flat here — the bike is near its value floor, so it has already done most of its depreciating. That's when a used bike is cheapest to own.</span>`;
+      buy += ` <span style="color:var(--cyan)">${_t("flat_floor")||"The curve is flat here — it's near its value floor, having done most of its depreciating already."}</span>`;
   }
   $("buynote").innerHTML = buy;
+
+  const ch = chosen();
+  $("confnote").innerHTML = (ch && ch.reliable===false)
+    ? fmt(_t("conf_limited")||"⚠ limited data for this {what} — read the curve's <b>shape</b>, not its exact złoty.",
+        {what: state.model ? (_t("model_word")||"model") : (_t("category_word")||"category")})
+    : "";
 
   // keep price box in sync if untouched
   if(state.price==null) $("price").placeholder = Math.round(r.baseNow).toLocaleString("pl-PL");
 }
 
-function selectClass(cls){
-  state.cls=cls; state.price=null; state.insurance=null; state.service=null;
-  document.querySelectorAll(".mode-btn").forEach(b=>b.setAttribute("aria-pressed", b.dataset.cls===cls));
+function prettyModel(n){ return isCar() ? titlecase(n) : n; }
+
+function fillModels(){
+  const ms = modelsInGroup(state.grp);
+  let opts = [];
+  if(!isCar()) opts.push(`<option value="">${(_t("any_word")||"Any")} ${groupLabel(state.grp)} — ${(_t("category_curve")||"category curve")}</option>`);
+  opts = opts.concat(ms.map(([name,m]) => `<option value="${name}">${prettyModel(name)} · n=${m.n_samples}</option>`));
+  $("model").innerHTML = opts.join("");
+  $("model").value = state.model || "";
+  $("model").disabled = ms.length===0;
+  $("modelhint").textContent = ms.length ? `${ms.length} ${(_t("models_word")||"models")}` : (_t("no_models")||"no per-model data");
+}
+
+function refreshAdv(){
+  const co = coeffs();
+  $("ins").placeholder = Math.round(co.insurance);
+  $("svc").placeholder = Math.round(co.service);
+  if($("pump")) $("pump").placeholder = co.pump;
+}
+
+function selectGroup(g){
+  state.grp=g; state.price=null; state.insurance=null; state.service=null; state.pump=null;
+  const ms = modelsInGroup(g).map(x=>x[0]);
+  state.model = isCar() ? (ms[0]||null) : null;  // car has no group curve → auto-pick top model
   $("price").value=""; $("ins").value=""; $("svc").value="";
-  const d=CFG.classDefaults[cls];
-  $("ins").placeholder=d.insurance_yr; $("svc").placeholder=d.service_per1000;
-  render();
+  document.querySelectorAll(".mode-btn").forEach(b=>b.setAttribute("aria-pressed", b.dataset.grp===g));
+  fillModels(); refreshAdv(); render();
 }
 
 function build(){
-  const host=$("modes");
-  host.innerHTML = present.map((cc,i)=>{
-    const d=CFG.classDefaults[cc];
-    return `<button class="mode-btn" data-cls="${cc}" aria-pressed="${i===0}">${d.label}<small>${d.tag}</small></button>`;
-  }).join("");
-  host.addEventListener("click", e=>{const b=e.target.closest(".mode-btn"); if(b) selectClass(b.dataset.cls);});
-  if(held.length){
-    const labels = held.map(cc => CFG.classDefaults[cc] ? CFG.classDefaults[cc].label : cc).join(", ");
-    $("heldNote").innerHTML = `<b>Gathering data:</b> ${labels} — too few clean listings so far to trust a depreciation curve, so they're held back rather than shown wrong.`;
+  const gs = groups();
+  if(!gs.includes(state.grp)){ state.grp = gs[0]; state.model = null; }
+  if($("grpLabel")) $("grpLabel").textContent = isCar() ? (_t("make")||"Make") : (_t("category")||"Category");
+  $("modes").innerHTML = gs.map(g =>
+    `<button class="mode-btn" data-grp="${g}" aria-pressed="${g===state.grp}"><span>${groupLabel(g)}</span><small>${groupTag(g)}</small></button>`).join("");
+  const ms = modelsInGroup(state.grp).map(x=>x[0]);
+  if(isCar() && (!state.model || !ms.includes(state.model))) state.model = ms[0]||null;
+  if(!isCar() && state.model && !ms.includes(state.model)) state.model = null;
+  const heldEl = $("heldNote");
+  if(heldEl){
+    const held = isCar() ? [] : (CFG.categoryOrder||[]).filter(c => CFG.categoryDefaults[c] && !gs.includes(c));
+    heldEl.innerHTML = held.length
+      ? fmt(_t("gathering")||"<b>Gathering data:</b> {list} — not enough clean listings yet.",
+          {list: held.map(c => (CFG.categoryDefaults[c]||{}).label || c).join(", ")})
+      : "";
   }
+  fillModels(); refreshAdv(); render();
+}
 
+function init(){
+  document.addEventListener("click", e=>{ const b=e.target.closest(".mode-btn"); if(b) selectGroup(b.dataset.grp); });
+  $("model").addEventListener("change", e=>{ state.model = e.target.value || null; state.price=null; $("price").value=""; refreshAdv(); render(); });
   $("age").addEventListener("input", e=>{state.age=+e.target.value; $("ageval").textContent=state.age; render();});
   $("hold").addEventListener("input", e=>{state.hold=+e.target.value; $("holdval").textContent=state.hold; render();});
   $("km").addEventListener("input", e=>{state.km=+e.target.value; $("kmval").textContent=state.km.toLocaleString("pl-PL"); render();});
   $("price").addEventListener("input", e=>{state.price = e.target.value? +e.target.value : null; render();});
   $("ins").addEventListener("input", e=>{state.insurance = e.target.value? +e.target.value : null; render();});
   $("svc").addEventListener("input", e=>{state.service = e.target.value? +e.target.value : null; render();});
-  $("pump").addEventListener("input", e=>{state.pump = +e.target.value||CFG.pumpPetrol; render();});
+  $("pump").addEventListener("input", e=>{state.pump = e.target.value? +e.target.value : null; render();});
   $("pcc").addEventListener("change", e=>{state.pcc = e.target.checked; render();});
-
-  selectClass(present[0]);
+  window.addEventListener("uichange", build);  // language or vehicle switched
+  build();
 }
-build();
+init();
 """
 
 
@@ -595,35 +691,40 @@ def _controls() -> str:
     return """
   <div class="controls">
     <div class="field">
-      <label>Engine class</label>
+      <label id="grpLabel" data-i18n="category">Category</label>
       <div class="modes" id="modes"></div>
       <p class="heldnote" id="heldNote"></p>
     </div>
+    <div class="field">
+      <label><span data-i18n="model_label">Model</span> · <span id="modelhint" style="text-transform:none;letter-spacing:0;color:var(--violet)">optional</span></label>
+      <select id="model" class="modelsel"></select>
+      <p class="heldnote" id="confnote" style="color:var(--amber)"></p>
+    </div>
     <div class="row">
       <div class="field">
-        <label>Age when you buy</label>
-        <div class="sliderline"><b class="mono"><span id="ageval">5</span></b><span>years old</span></div>
+        <label data-i18n="lbl_age">Age when you buy</label>
+        <div class="sliderline"><b class="mono"><span id="ageval">5</span></b><span data-i18n="yrs_old">years old</span></div>
         <input type="range" id="age" min="1" max="18" step="1" value="5">
       </div>
       <div class="field">
-        <label>How long you'll keep it</label>
-        <div class="sliderline"><b class="mono"><span id="holdval">3</span></b><span>years</span></div>
+        <label data-i18n="lbl_hold">How long you'll keep it</label>
+        <div class="sliderline"><b class="mono"><span id="holdval">3</span></b><span data-i18n="lbl_years">years</span></div>
         <input type="range" id="hold" min="1" max="8" step="1" value="3">
       </div>
       <div class="field">
-        <label>Distance per year</label>
-        <div class="sliderline"><b class="mono" id="kmval">8 000</b><span>km / year</span></div>
+        <label data-i18n="lbl_km">Distance per year</label>
+        <div class="sliderline"><b class="mono" id="kmval">8 000</b><span data-i18n="km_year">km / year</span></div>
         <input type="range" id="km" min="1000" max="25000" step="500" value="8000">
       </div>
     </div>
     <div class="row">
       <div class="field">
-        <label>Price you'd pay (blank = market fit)</label>
+        <label data-i18n="lbl_price">Price you'd pay (blank = market fit)</label>
         <input type="number" id="price" step="500" placeholder="—"
           style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:1rem;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:.55rem .7rem">
       </div>
       <div class="field">
-        <label>Your insurance quote · OC/AC (zł/yr)</label>
+        <label data-i18n="lbl_ins">Your insurance quote · OC/AC (zł/yr)</label>
         <input type="number" id="ins" step="50" placeholder="—"
           style="width:100%;font-family:'IBM Plex Mono',monospace;font-size:1rem;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:.55rem .7rem">
       </div>
@@ -636,17 +737,17 @@ def _odometer() -> str:
     return """
 <div class="odo reveal" style="animation-delay:.06s">
   <div>
-    <div class="head">True cost to ride</div>
+    <div class="head" data-i18n="odo_head">True cost to ride</div>
     <div class="perkm" id="perkm">—</div>
-    <p class="yr">≈ <b id="yrnum">—</b> every year</p>
+    <p class="yr">≈ <b id="yrnum">—</b> <span data-i18n="odo_yr">every year</span></p>
     <p class="band" id="bandtxt"></p>
     <p class="life" id="life"></p>
   </div>
   <div>
-    <div class="head">Where the money goes</div>
+    <div class="head" data-i18n="odo_where">Where the money goes</div>
     <div class="stack" id="stack" style="margin-top:.7rem"></div>
     <div class="receipt" id="receipt"></div>
-    <div class="tot"><span>Total / year</span><span class="v mono" id="rectot">—</span></div>
+    <div class="tot"><span data-i18n="tot_year">Total / year</span><span class="v mono" id="rectot">—</span></div>
   </div>
 </div>
 """
@@ -731,49 +832,103 @@ def _gate() -> str:
 """
 
 
-def _render_html(agg: dict) -> str:
-    meta = agg.get("meta", {})
-    classes = agg.get("classes", {})
-    order = meta.get("cc_order", [])
-    # Need at least one *reliable* class — an unreliable curve would mislead the
-    # whole calculator (reliable defaults True when the flag is absent).
-    def _ok(cc: str) -> bool:
-        c = classes.get(cc, {})
-        return bool(c.get("points")) and c.get("reliable", True) is not False
+# UI translations. `{x}` are fmt() placeholders filled in JS.
+STRINGS: dict[str, dict[str, str]] = {
+    "en": {
+        "veh_moto": "Moto", "veh_car": "Car",
+        "h1": "The sticker is<br>the small print",
+        "dek": "A vehicle's real cost isn't its price — it's what it loses, burns and bills you every year. This adds it all up, per kilometre, on top of the depreciation we actually measure.",
+        "nav_cost": "Personal cost", "nav_ledger": "Public-money ledger", "nav_depr": "Depreciation curves",
+        "foot1": "METHOD · depreciation read off cross-sectional value-vs-age curves, scaled to your price. Fuel/service/fees are coefficient models, user-adjustable.",
+        "foot2": "DATA · derived aggregate curves only — no listings reproduced. Insurance is never modelled (you paste a quote).",
+        "category": "Category", "make": "Make", "model_label": "Model", "optional": "optional",
+        "lbl_age": "Age when you buy", "yrs_old": "years old", "lbl_hold": "How long you'll keep it",
+        "lbl_years": "years", "lbl_km": "Distance per year", "km_year": "km / year",
+        "lbl_price": "Price you'd pay (blank = market fit)", "lbl_ins": "Your insurance quote · OC/AC (zł/yr)",
+        "odo_head": "True cost to ride", "odo_yr": "every year", "odo_where": "Where the money goes",
+        "tot_year": "Total / year", "assumptions": "Assumptions — adjust the model",
+        "lbl_fuel_price": "Fuel price (zł/l or zł/kWh)", "lbl_service": "Service reserve (zł / 1000 km)",
+        "lbl_pcc": "charge 2% PCC purchase tax",
+        "sec_big_eye": "The big one", "sec_big_h": "What it bleeds while you own it",
+        "any_word": "Any", "category_curve": "category curve", "models_word": "models", "no_models": "no per-model data",
+        "model_word": "model", "category_word": "category",
+        "comp_depreciation": "Depreciation", "comp_fuel": "Fuel", "comp_service": "Service & wear",
+        "comp_insurance": "Insurance (OC/AC)", "comp_fees": "Fees & PCC tax",
+        "per_km": "zł / km", "range_fmt": "range {lo} – {hi} /yr", "year": "year", "years": "years",
+        "life": "Over <b>{hold} {yr}</b> at <b>{km} km/yr</b> you'll spend about <b>{life}</b> — of which <b>{share}%</b> is value it loses while parked.",
+        "buy_pay": "You pay <b>{paid}</b> today; after {hold} {yr} the curve says it's worth about <b>{end}</b>.",
+        "flat_young": "⚠ Near-new depreciation here isn't resolved yet — too few young listings, so the curve is flat where it shouldn't be. Treat this as a floor; real loss is likely higher.",
+        "flat_floor": "The curve is flat here — it's near its value floor, having done most of its depreciating already. That's when a used vehicle is cheapest to own.",
+        "conf_limited": "⚠ limited data for this {what} — read the curve's <b>shape</b>, not its exact złoty.",
+        "gathering": "<b>Gathering data:</b> {list} — not enough clean listings yet.",
+    },
+    "pl": {
+        "veh_moto": "Moto", "veh_car": "Auto",
+        "h1": "Cena to<br>tylko nagłówek",
+        "dek": "Prawdziwy koszt pojazdu to nie cena — to ile traci, spala i kosztuje co roku. To podlicza całość, na kilometr, na bazie zmierzonej utraty wartości.",
+        "nav_cost": "Koszt osobisty", "nav_ledger": "Bilans publiczny", "nav_depr": "Krzywe wartości",
+        "foot1": "METODA · utrata wartości odczytana z przekrojowych krzywych wartość-wiek, skalowana do Twojej ceny. Paliwo/serwis/opłaty to modele współczynnikowe, edytowalne.",
+        "foot2": "DANE · tylko pochodne krzywe zbiorcze — żadne ogłoszenia nie są kopiowane. Ubezpieczenia nie modelujemy (wklejasz wycenę).",
+        "category": "Kategoria", "make": "Marka", "model_label": "Model", "optional": "opcjonalnie",
+        "lbl_age": "Wiek przy zakupie", "yrs_old": "lat", "lbl_hold": "Jak długo go zatrzymasz",
+        "lbl_years": "lat", "lbl_km": "Dystans rocznie", "km_year": "km / rok",
+        "lbl_price": "Cena, którą zapłacisz (puste = wg rynku)", "lbl_ins": "Twoja wycena ubezpieczenia · OC/AC (zł/rok)",
+        "odo_head": "Prawdziwy koszt jazdy", "odo_yr": "rocznie", "odo_where": "Gdzie idą pieniądze",
+        "tot_year": "Razem / rok", "assumptions": "Założenia — dostosuj model",
+        "lbl_fuel_price": "Cena paliwa (zł/l lub zł/kWh)", "lbl_service": "Rezerwa serwisowa (zł / 1000 km)",
+        "lbl_pcc": "nalicz 2% PCC od zakupu",
+        "sec_big_eye": "Najważniejsze", "sec_big_h": "Ile traci, gdy go masz",
+        "any_word": "Dowolny", "category_curve": "krzywa kategorii", "models_word": "modeli", "no_models": "brak danych per model",
+        "model_word": "modelu", "category_word": "kategorii",
+        "comp_depreciation": "Utrata wartości", "comp_fuel": "Paliwo", "comp_service": "Serwis i zużycie",
+        "comp_insurance": "Ubezpieczenie (OC/AC)", "comp_fees": "Opłaty i PCC",
+        "per_km": "zł / km", "range_fmt": "zakres {lo} – {hi} /rok", "year": "rok", "years": "lat",
+        "life": "Przez <b>{hold} {yr}</b> przy <b>{km} km/rok</b> wydasz około <b>{life}</b> — z czego <b>{share}%</b> to wartość tracona podczas postoju.",
+        "buy_pay": "Płacisz dziś <b>{paid}</b>; po {hold} {yr} krzywa wskazuje wartość około <b>{end}</b>.",
+        "flat_young": "⚠ Utrata wartości tuż po zakupie nie jest tu jeszcze rozstrzygnięta — za mało młodych ofert, więc krzywa jest płaska. Traktuj to jako dolną granicę; realna strata jest większa.",
+        "flat_floor": "Krzywa jest tu płaska — pojazd jest blisko wartości minimalnej, większość utraty już za nim. Wtedy używany pojazd jest najtańszy w utrzymaniu.",
+        "conf_limited": "⚠ mało danych dla tego {what} — patrz na <b>kształt</b> krzywej, nie dokładne złotówki.",
+        "gathering": "<b>Zbieramy dane:</b> {list} — za mało czystych ofert na krzywą.",
+    },
+}
 
-    has_curves = any(_ok(cc) for cc in order) if order else bool(classes)
-    sample = bool(meta.get("sample"))
+
+def _render_html(agg: dict, car_agg: dict | None = None) -> str:
+    car_agg = car_agg or {"meta": {}, "models": {}, "fuels": {}}
+    meta = agg.get("meta", {})
+    moto_curves = any(c.get("points") for c in agg.get("categories", {}).values()) or any(
+        m.get("points") for m in agg.get("models", {}).values()
+    )
+    car_curves = any(m.get("points") for m in car_agg.get("models", {}).values())
+    has_curves = moto_curves or car_curves
     year = meta.get("current_year", "—")
     config = _client_config()
-    agg_json = json.dumps(agg, ensure_ascii=False)
-
-    sample_banner = (
-        '<p class="kicker" style="color:var(--amber)">⚠ sample curves — live page uses real data</p>' if sample else ""
-    )
+    moto_json = json.dumps(agg, ensure_ascii=False)
+    car_json = json.dumps(car_agg, ensure_ascii=False)
 
     head = f"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>What a bike really costs · personal TCO · PL</title>
+<title>What a vehicle really costs · personal TCO · PL</title>
 {_FONTS}
-<style>{_STYLE}</style>
+<style>{_STYLE}{ui.SELECTOR_CSS}</style>
 </head>
 <body>
 <div class="wrap">
 <header class="reveal">
-  <p class="kicker">Poland · used-bike ownership · {year}</p>
-  <h1>The sticker is<br>the small print</h1>
-  <p class="dek">A motorcycle's real cost isn't its price — it's what it loses,
-  burns and bills you every year you keep it. This adds the lot up, per kilometre,
-  on top of the depreciation we actually measure.</p>
+  {ui.selector_bar()}
+  <p class="kicker">Poland · used-vehicle ownership · {year}</p>
+  <h1 data-i18n-html="h1">The sticker is<br>the small print</h1>
+  <p class="dek" data-i18n="dek">A vehicle's real cost isn't its price — it's what it
+  loses, burns and bills you every year. This adds it all up, per kilometre, on top
+  of the depreciation we actually measure.</p>
   <div class="rule"></div>
-  {sample_banner}
   <nav class="nav">
-    <a href="cost.html" class="here">Personal cost</a>
-    <a href="index.html">Public-money ledger</a>
-    <a href="depreciation.html">Depreciation curves</a>
+    <a href="cost.html" class="here" data-i18n="nav_cost">Personal cost</a>
+    <a href="index.html" data-i18n="nav_ledger">Public-money ledger</a>
+    <a href="depreciation.html" data-i18n="nav_depr">Depreciation curves</a>
   </nav>
 """
 
@@ -781,8 +936,8 @@ def _render_html(agg: dict) -> str:
 
     foot = """
 <footer>
-  <div>METHOD · depreciation read off cross-sectional value-vs-age curves (weighted isotonic regression, private-seller slice), scaled to your price. Fuel/service/fees are coefficient models, user-adjustable.</div>
-  <div>DATA · derived aggregate curves only — no listings reproduced. Insurance is never modelled (you paste a quote). Seasonal buy/sell timing arrives once a full tracking season is banked.</div>
+  <div data-i18n="foot1">METHOD · depreciation read off cross-sectional value-vs-age curves, scaled to your price. Fuel/service/fees are coefficient models, user-adjustable.</div>
+  <div data-i18n="foot2">DATA · derived aggregate curves only — no listings reproduced. Insurance is never modelled (you paste a quote).</div>
 </footer>
 </div>
 """
@@ -790,14 +945,10 @@ def _render_html(agg: dict) -> str:
     if not has_curves:
         return head + body + foot + "</body>\n</html>\n"
     return (
-        head
-        + body
-        + foot
-        + "<script>\nconst CFG = "
-        + config
-        + ";\nconst AGG = "
-        + agg_json
-        + ";\n"
-        + _JS
-        + "</script>\n</body>\n</html>\n"
+        head + body + foot
+        + "<script>\nconst CFG = " + config
+        + ";\nconst AGG_MOTO = " + moto_json
+        + ";\nconst AGG_CAR = " + car_json
+        + ";\nwindow.T = " + json.dumps(STRINGS, ensure_ascii=False) + ";\n"
+        + ui.SELECTOR_JS + "\n" + _JS + "</script>\n</body>\n</html>\n"
     )

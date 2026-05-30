@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 from src.tco import (
-    CLASS_DEFAULTS,
+    CATEGORY_DEFAULTS,
     PUMP_PETROL_PLN,
     _interp,
     compute_tco,
@@ -58,6 +58,35 @@ SAMPLE = {
                     "n": 8,
                     "year": 2021,
                 },
+            ],
+        }
+    },
+    "categories": {
+        "naked": {
+            "anchor": 30000,
+            "sweet_spot_age": 3,
+            "reliable": True,
+            "n_samples": 120,
+            "points": [
+                {"age": 2, "smooth": 30000, "median": 30000, "p25": 27000, "p75": 33000,
+                 "median_km": 10000, "retained_pct": 100.0, "annual_depr": 3000, "n": 8, "year": 2024},
+                {"age": 5, "smooth": 22000, "median": 22000, "p25": 19000, "p75": 25000,
+                 "median_km": 40000, "retained_pct": 73.3, "annual_depr": 2000, "n": 8, "year": 2021},
+            ],
+        }
+    },
+    "models": {
+        "Yamaha MT-07": {
+            "anchor": 31000,
+            "sweet_spot_age": 2,
+            "reliable": True,
+            "n_samples": 31,
+            "category": "naked",
+            "points": [
+                {"age": 2, "smooth": 31000, "median": 31000, "p25": 28000, "p75": 34000,
+                 "median_km": 9000, "retained_pct": 100.0, "annual_depr": 3000, "n": 4, "year": 2024},
+                {"age": 6, "smooth": 21000, "median": 21000, "p25": 18000, "p75": 24000,
+                 "median_km": 45000, "retained_pct": 67.7, "annual_depr": 2500, "n": 4, "year": 2020},
             ],
         }
     },
@@ -157,7 +186,10 @@ class TestRender:
         assert path.endswith("cost.html")
         html = Path(path).read_text(encoding="utf-8")
         assert "const CFG =" in html  # coefficient source-of-truth embedded
-        assert "const AGG =" in html  # depreciation curves embedded
+        assert "const AGG_MOTO =" in html  # moto curves embedded
+        assert "const AGG_CAR =" in html  # car curves embedded
+        assert 'data-veh="car"' in html  # vehicle selector present
+        assert "langSeg" in html  # language selector present
         assert "function compute()" in html  # JS mirror present
         assert "Coming soon" in html  # seasonal panel stubbed
         assert "zł / km" in html  # odometer hero
@@ -168,24 +200,34 @@ class TestRender:
         line = next(ln for ln in html.splitlines() if ln.startswith("const CFG ="))
         cfg = json.loads(line[len("const CFG =") :].rstrip(";").strip())
         assert cfg["pumpPetrol"] == PUMP_PETROL_PLN
-        assert set(cfg["classDefaults"]) == set(CLASS_DEFAULTS)
+        assert set(cfg["categoryDefaults"]) == set(CATEGORY_DEFAULTS)
 
     def test_no_listing_fields_leak(self, tmp_path):
         # The page embeds aggregates — assert it stays curves-only.
         path = render_tco(self._write(tmp_path, SAMPLE), output_dir=str(tmp_path))
         html = Path(path).read_text(encoding="utf-8")
-        line = next(ln for ln in html.splitlines() if ln.startswith("const AGG ="))
-        blob = line[len("const AGG =") :]
-        for leak in ('"url"', '"title"', '"listing_uid"', '"seller_name"'):
-            assert leak not in blob
+        for prefix in ("const AGG_MOTO =", "const AGG_CAR ="):
+            line = next(ln for ln in html.splitlines() if ln.startswith(prefix))
+            blob = line[len(prefix) :]
+            for leak in ('"url"', '"title"', '"listing_uid"', '"seller_name"'):
+                assert leak not in blob
 
     def test_gate_when_no_curves(self, tmp_path):
+        # Gate only when BOTH moto and car aggregates are empty.
         empty = {"meta": {"current_year": 2026, "cc_order": []}, "classes": {}}
-        path = render_tco(self._write(tmp_path, empty), output_dir=str(tmp_path))
+        path = render_tco(
+            self._write(tmp_path, empty),
+            car_aggregates_path=str(tmp_path / "no_cars.json"),
+            output_dir=str(tmp_path),
+        )
         html = Path(path).read_text(encoding="utf-8")
         assert "warming up" in html
         assert "const CFG =" not in html  # no calculator when there's nothing to compute
 
     def test_missing_aggregates_file_renders_gate(self, tmp_path):
-        path = render_tco(str(tmp_path / "nope.json"), output_dir=str(tmp_path))
+        path = render_tco(
+            str(tmp_path / "nope.json"),
+            car_aggregates_path=str(tmp_path / "nope_cars.json"),
+            output_dir=str(tmp_path),
+        )
         assert "warming up" in Path(path).read_text(encoding="utf-8")
