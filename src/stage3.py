@@ -18,15 +18,17 @@ Two honest findings drive the page, both straight from GUS BDL (dział 600, MnPP
     building) and bieżące (current — operating + maintenance, where road repairs
     like Al. Rzeczypospolitej live). Current spending now dwarfs capital (~1 550 vs
     ~430 zł/cap in 2024): most transport money just *runs and patches* the system,
-    it doesn't expand it. That answers "are repairs in the data?" — emphatically yes.
+    it doesn't expand it.
 
-A schematic map pins the named investments (Trasa Słowackiego, the Martwa Wisła
-tunnel, PKM, the southern trams, the cycle network) by mode so you can see what the
-capital half actually bought.
+Then a real interactive map (Leaflet + the city's own investment-map dataset) pins
+every road and public-transit investment by where it was actually built, sized by
+cost — so you can see the capital wave (road megaprojects 2012–16 on the port/airport
+axis; the tram + PKM build-out 2008–15 in the southern districts) on the ground.
 
-Like the other surfaces this is a static, self-contained page: Python embeds the
-BDL series (data/stage3_gdansk_transport.json, derived totals only) plus a curated
-projects list, and vanilla JS draws every chart as hand-rolled SVG. No CDN, no deps.
+Static + self-contained for the budget charts (Python embeds the BDL series + the
+investment list, vanilla JS draws the charts as hand-rolled SVG). The map is the one
+exception: it pulls Leaflet + a basemap from a CDN, which only matters for a literal
+geographic map and stays behind the same auth gate as the page.
 """
 
 from __future__ import annotations
@@ -40,60 +42,9 @@ from src import ui
 logger = logging.getLogger(__name__)
 
 DEFAULT_BUDGET = os.path.join("data", "stage3_gdansk_transport.json")
+DEFAULT_INVEST = os.path.join("data", "stage3_gdansk_investments.json")
 
-# Curated marquee investments. Costs are reported headline figures (rounded, mln
-# zł); many are EU/state co-funded so they are NOT all city money — the page says
-# so. `cost` is None where a clean figure isn't public (shown as "—"). x/y are
-# schematic positions in a 0–100 box (x = west→east, y = coast→south), not survey
-# coordinates. mode drives the colour + the legend.
-PROJECTS = [
-    {"key": "tunnel", "mode": "tunnel", "year": 2016, "cost": 885, "x": 80, "y": 24,
-     "name": "Tunnel under the Martwa Wisła", "name_pl": "Tunel pod Martwą Wisłą",
-     "blurb": "The marquee road project — stage IV of Trasa Słowackiego, mostly EU-funded.",
-     "blurb_pl": "Sztandarowa inwestycja drogowa — IV etap Trasy Słowackiego, w większości z UE."},
-    {"key": "slowackiego", "mode": "road", "year": 2016, "cost": 1400, "x": 47, "y": 31,
-     "name": "Trasa Słowackiego", "name_pl": "Trasa Słowackiego",
-     "blurb": "Cross-city road corridor, airport → port, built in four stages.",
-     "blurb_pl": "Drogowy korytarz przez miasto, lotnisko → port, w czterech etapach."},
-    {"key": "pkm1", "mode": "rail", "year": 2015, "cost": 1100, "x": 28, "y": 39,
-     "name": "PKM (stage I)", "name_pl": "PKM (etap I)",
-     "blurb": "Pomorska Kolej Metropolitalna — new commuter rail, Wrzeszcz → airport → Kashubia.",
-     "blurb_pl": "Pomorska Kolej Metropolitalna — nowa kolej, Wrzeszcz → lotnisko → Kaszuby."},
-    {"key": "pkms", "mode": "rail", "year": 2027, "cost": 221, "x": 53, "y": 83,
-     "name": "PKM Południe (planned)", "name_pl": "PKM Południe (plan.)",
-     "blurb": "Southern rail spur; Gdańsk's share ~221 mln of a ~2.3 bn programme.",
-     "blurb_pl": "Południowa odnoga kolei; udział Gdańska ~221 mln z ~2,3 mld."},
-    {"key": "bulonska", "mode": "tram", "year": 2019, "cost": None, "x": 46, "y": 66,
-     "name": "Nowa Bulońska tram", "name_pl": "Tramwaj Nowa Bulońska",
-     "blurb": "Tram extension into the dense southern districts (Jasień / Morena).",
-     "blurb_pl": "Tramwaj w gęste dzielnice południa (Jasień / Morena)."},
-    {"key": "gpw", "mode": "tram", "year": 2026, "cost": None, "x": 51, "y": 75,
-     "name": "GPW tram (building)", "name_pl": "Tramwaj GPW (w budowie)",
-     "blurb": "Gdańsk Południe ↔ Wrzeszcz tram, knitting the southern districts to the centre.",
-     "blurb_pl": "Tramwaj Gdańsk Południe ↔ Wrzeszcz, spinający południe z centrum."},
-    {"key": "bike", "mode": "bike", "year": 2016, "cost": 35, "x": 38, "y": 52,
-     "name": "Cycle network (EU)", "name_pl": "Sieć rowerowa (UE)",
-     "blurb": "EU-funded cycle routes; the city now counts ~883 km of paths.",
-     "blurb_pl": "Trasy rowerowe z UE; miasto liczy dziś ~883 km dróg rowerowych."},
-    {"key": "forum", "mode": "hub", "year": 2018, "cost": None, "x": 66, "y": 41,
-     "name": "Forum Gdańsk hub", "name_pl": "Węzeł Forum Gdańsk",
-     "blurb": "Multimodal interchange stitched over the main railway cut.",
-     "blurb_pl": "Węzeł przesiadkowy nad wykopem kolejowym."},
-    {"key": "siennicki", "mode": "bridge", "year": 2022, "cost": None, "x": 73, "y": 49,
-     "name": "Most Siennicki", "name_pl": "Most Siennicki",
-     "blurb": "Reconstruction of the historic bascule bridge over the Motława.",
-     "blurb_pl": "Przebudowa zabytkowego mostu zwodzonego nad Motławą."},
-    {"key": "rzeczy", "mode": "maintenance", "year": 2024, "cost": None, "x": 57, "y": 16,
-     "name": "Al. Rzeczypospolitej repaving", "name_pl": "Remont al. Rzeczypospolitej",
-     "blurb": "Routine repaving in Przymorze — the 'current' bucket, not an expansion.",
-     "blurb_pl": "Bieżący remont w Przymorzu — koszt utrzymania, nie rozbudowa."},
-]
-
-MODE_COLOR = {
-    "road": "#f4a31c", "tunnel": "#f4731c", "bridge": "#f4731c",
-    "rail": "#3aa0ff", "tram": "#34d399", "bike": "#f062c0",
-    "hub": "#b08cff", "maintenance": "#8b97a6",
-}
+MODE_COLOR = {"road": "#f4a31c", "transit": "#34d399"}
 
 STRINGS = {
     "en": {
@@ -109,13 +60,14 @@ STRINGS = {
         "run_eye": "Build vs run", "run_h": "Most of it just runs the system",
         "run_lede": "The same budget, split by economic type. Capital = building; current = operating + maintenance, where road repairs like Al. Rzeczypospolitej sit. Current now dwarfs capital — the city mostly runs and patches what exists.",
         "run_current": "Current (run + repair)", "run_capital": "Capital (build)",
-        "map_eye": "On the ground", "map_h": "What the capital half bought",
-        "map_lede": "Named investments by mode. Costs are reported headline figures (rounded, mln zł) — several are EU- or state-co-funded, so not all of it is city money. Positions are schematic.",
-        "map_note": "Schematic — positions approximate, not to scale.",
-        "axis_zl_cap": "zł / resident", "year": "year", "reported": "reported", "planned": "planned",
-        "src": "Source · GUS Bank Danych Lokalnych, dział 600 (Transport i łączność), Gdańsk. Transit + rail = dział-600 total minus all road chapters (≈ ZTM bus/tram + SKM/PKM + misc). Derived totals only.",
-        "modes": {"road": "Road", "tunnel": "Tunnel", "bridge": "Bridge", "rail": "Rail",
-                  "tram": "Tram", "bike": "Cycle", "hub": "Interchange", "maintenance": "Maintenance"},
+        "map_eye": "On the ground", "map_h": "What the capital actually built, and where",
+        "map_lede": "Every road and public-transit investment from the city's own investment map, dropped where it was built. Circle size = total cost; colour = roads vs transit. Click a circle for the cost and how much was city money vs EU. The road megaprojects cluster on the port/airport axis (2012–16); the tram + PKM build-out sits in the southern districts (2008–15).",
+        "map_note": "Source · Gdańska Mapa Inwestycji (gdansk.pl). Circle area ∝ total cost. Drag to pan, double-click to zoom.",
+        "f_all": "All", "f_road": "Roads", "f_transit": "Transit", "f_recent": "2018+ only",
+        "pop_total": "total", "pop_city": "city money", "pop_ue": "EU funds", "pop_mln": "mln zł",
+        "leg_road": "Roads / car", "leg_transit": "Public transit",
+        "axis_zl_cap": "zł / resident",
+        "src": "Sources · GUS Bank Danych Lokalnych, dział 600 (budget series) + Gdańska Mapa Inwestycji (project locations & costs). Derived totals only — no marketplace data.",
     },
     "pl": {
         "kicker": "Gdańsk · budżet transportu · 2004–2024",
@@ -130,13 +82,14 @@ STRINGS = {
         "run_eye": "Budowa kontra utrzymanie", "run_h": "Większość to samo utrzymanie",
         "run_lede": "Ten sam budżet wg rodzaju. Majątkowe = budowa; bieżące = utrzymanie + eksploatacja, tu mieszczą się remonty dróg jak al. Rzeczypospolitej. Bieżące dziś znacznie przewyższają majątkowe — miasto głównie utrzymuje i łata to, co jest.",
         "run_current": "Bieżące (utrzymanie)", "run_capital": "Majątkowe (budowa)",
-        "map_eye": "W terenie", "map_h": "Co kupiła część inwestycyjna",
-        "map_lede": "Nazwane inwestycje wg środka transportu. Koszty to podawane kwoty (zaokrąglone, mln zł) — część współfinansowana z UE lub budżetu państwa, więc nie wszystko to pieniądze miasta. Pozycje schematyczne.",
-        "map_note": "Schemat — pozycje przybliżone, nie w skali.",
-        "axis_zl_cap": "zł / mieszkańca", "year": "rok", "reported": "podano", "planned": "plan.",
-        "src": "Źródło · GUS Bank Danych Lokalnych, dział 600 (Transport i łączność), Gdańsk. Transit + kolej = suma działu 600 minus rozdziały drogowe (≈ ZTM autobus/tramwaj + SKM/PKM + inne). Tylko zagregowane sumy.",
-        "modes": {"road": "Droga", "tunnel": "Tunel", "bridge": "Most", "rail": "Kolej",
-                  "tram": "Tramwaj", "bike": "Rower", "hub": "Węzeł", "maintenance": "Utrzymanie"},
+        "map_eye": "W terenie", "map_h": "Co i gdzie zbudowano",
+        "map_lede": "Każda inwestycja drogowa i transportu zbiorowego z miejskiej mapy inwestycji, naniesiona tam, gdzie powstała. Wielkość koła = koszt całkowity; kolor = drogi czy transit. Kliknij koło, by zobaczyć koszt i ile to pieniądze miasta, a ile z UE. Drogowe megainwestycje skupiają się na osi port–lotnisko (2012–16); tramwaje i PKM — na południu (2008–15).",
+        "map_note": "Źródło · Gdańska Mapa Inwestycji (gdansk.pl). Pole koła ∝ koszt. Przeciągnij, dwuklik przybliża.",
+        "f_all": "Wszystko", "f_road": "Drogi", "f_transit": "Transit", "f_recent": "tylko 2018+",
+        "pop_total": "całość", "pop_city": "pieniądze miasta", "pop_ue": "środki UE", "pop_mln": "mln zł",
+        "leg_road": "Drogi / auto", "leg_transit": "Transport zbiorowy",
+        "axis_zl_cap": "zł / mieszkańca",
+        "src": "Źródła · GUS Bank Danych Lokalnych, dział 600 (szereg budżetowy) + Gdańska Mapa Inwestycji (lokalizacje i koszty). Tylko zagregowane sumy — bez danych z ogłoszeń.",
     },
 }
 
@@ -145,11 +98,15 @@ _FONTS = (
     '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
     '<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Spline+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">'
 )
+_LEAFLET = (
+    '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">'
+    '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>'
+)
 
 _STYLE = """
 :root{
   --bg:#0c0f12; --panel:#13181d; --line:#252c33; --ink:#eef1f3; --muted:#8b97a6;
-  --road:#f4a31c; --transit:#34d399; --rail:#3aa0ff; --cap:#f4731c;
+  --road:#f4a31c; --transit:#34d399; --cap:#f4731c;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -180,20 +137,23 @@ h2{font-family:"Archivo Black",sans-serif; font-weight:400; font-size:clamp(1.5r
 svg{display:block; width:100%; height:auto; overflow:visible}
 .legend{display:flex; gap:1.1rem; flex-wrap:wrap; font-family:"IBM Plex Mono",monospace;
   font-size:.76rem; color:var(--muted); margin-top:.8rem}
-.legend i{display:inline-block; width:11px; height:11px; border-radius:3px; margin-right:.4rem; vertical-align:-1px}
-.grid{display:grid; grid-template-columns:1.25fr .9fr; gap:1.2rem}
-@media(max-width:760px){.grid{grid-template-columns:1fr}}
-.plist{display:flex; flex-direction:column; gap:.5rem; max-height:520px; overflow:auto; padding-right:.3rem}
-.pitem{display:grid; grid-template-columns:auto 1fr auto; gap:.7rem; align-items:baseline;
-  padding:.6rem .2rem; border-bottom:1px solid var(--line)}
-.pitem .dot{width:10px; height:10px; border-radius:50%; align-self:center}
-.pitem .nm{font-weight:600; font-size:.92rem}
-.pitem .bl{grid-column:2; color:var(--muted); font-size:.8rem; margin-top:.15rem}
-.pitem .meta{font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--muted); white-space:nowrap}
-.pitem .cost{color:var(--ink)}
-.pin{cursor:pointer; transition:.15s} .pin:hover{filter:brightness(1.25)}
-.maphint{font-family:"IBM Plex Mono",monospace; font-size:.7rem; fill:var(--muted)}
-.note{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--muted); margin-top:.6rem}
+.legend i{display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:.4rem; vertical-align:-1px}
+.mapctl{display:flex; gap:1rem; align-items:center; flex-wrap:wrap; margin-bottom:.7rem}
+.mapctl .seg{display:inline-flex; border:1px solid var(--line); border-radius:999px; overflow:hidden;
+  background:var(--panel); font-family:"IBM Plex Mono",monospace}
+.mapctl .seg button{appearance:none; border:0; background:transparent; color:var(--muted); cursor:pointer;
+  font:inherit; font-size:.76rem; padding:.42rem .9rem; transition:.15s}
+.mapctl .seg button:hover{color:var(--ink)}
+.mapctl .seg button.on{background:var(--ink); color:#0b0b0f}
+.mapctl .rec{font-family:"IBM Plex Mono",monospace; font-size:.76rem; color:var(--muted); cursor:pointer; user-select:none}
+#map{height:600px; border-radius:16px; border:1px solid var(--line); margin:0; background:#0f141a; z-index:0}
+.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#13181d; color:#eef1f3; border:1px solid #252c33}
+.leaflet-popup-content{font-family:"Spline Sans",sans-serif; font-size:.84rem; line-height:1.45; margin:.7rem .9rem}
+.leaflet-popup-content b{font-size:.9rem}
+.leaflet-container a.leaflet-popup-close-button{color:#8b97a6}
+.leaflet-bar a{background:#13181d; color:#eef1f3; border-bottom-color:#252c33}
+.leaflet-bar a:hover{background:#1c232b}
+.note{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--muted); margin-top:.7rem}
 footer{margin-top:3.6rem; padding-top:1.3rem; border-top:1px solid var(--line);
   font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--muted); line-height:1.7}
 @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
@@ -206,9 +166,7 @@ _JS = r"""
 const YR = Object.keys(BUDGET.years).map(Number).sort((a,b)=>a-b);
 const Y = a => BUDGET.years[a];
 const fmt0 = v => Math.round(v).toLocaleString("pl-PL");
-const mlnLabel = p => p.cost==null ? "—" : (p.cost>=1000 ? (p.cost/1000).toFixed(p.cost%1000?1:0)+" bn" : p.cost+" mln");
 
-// generic line/area plotter into an SVG string
 function plot(series, opts){
   const W=opts.w||640, H=opts.h||300, mL=46, mR=14, mT=16, mB=34;
   const xs = opts.xkeys, x0=xs[0], x1=xs[xs.length-1];
@@ -217,16 +175,13 @@ function plot(series, opts){
   const px = x => mL + (x-x0)/((x1-x0)||1)*(W-mL-mR);
   const py = v => H-mB - (v-ymin)/((ymax-ymin)||1)*(H-mT-mB);
   let g = "";
-  // y gridlines
   const ticks=4;
   for(let i=0;i<=ticks;i++){ const v=ymin+(ymax-ymin)*i/ticks; const y=py(v);
     g+=`<line x1="${mL}" y1="${y.toFixed(1)}" x2="${W-mR}" y2="${y.toFixed(1)}" stroke="#1e242b"/>`;
     g+=`<text x="${mL-8}" y="${(y+4).toFixed(1)}" text-anchor="end" font-family="IBM Plex Mono" font-size="10" fill="#8b97a6">${fmt0(v)}</text>`;
   }
-  // x labels (every other year)
   xs.forEach((xx,i)=>{ if(i%2) return; const x=px(xx);
     g+=`<text x="${x.toFixed(1)}" y="${H-mB+18}" text-anchor="middle" font-family="IBM Plex Mono" font-size="10" fill="#8b97a6">${xx}</text>`; });
-  // series
   series.forEach(s=>{
     const pts = xs.map((xx,i)=>[px(xx),py(s.vals[i]==null?ymin:s.vals[i])]);
     if(s.area){
@@ -244,14 +199,13 @@ function plot(series, opts){
 }
 
 function drawFlip(){
-  const xs = YR.filter(y=>Y(y).roads_per_cap>0);   // 2012+
+  const xs = YR.filter(y=>Y(y).roads_per_cap>0);
   const roads = xs.map(y=>Y(y).roads_per_cap);
   const tr = xs.map(y=>Y(y).nonroad_per_cap);
-  const svg = plot([
+  document.getElementById("flip").innerHTML = plot([
     {vals:tr, color:"#34d399", area:true, fill:0.14},
     {vals:roads, color:"#f4a31c", area:true, fill:0.14},
   ], {xkeys:xs, ylabel:_t("axis_zl_cap")});
-  document.getElementById("flip").innerHTML = svg;
   const first=Y(xs[0]), last=Y(xs[xs.length-1]);
   document.getElementById("flipShareA").textContent = fmt(_t("flip_share"),{v:first.roads_share});
   document.getElementById("flipShareB").textContent = fmt(_t("flip_share"),{v:last.roads_share});
@@ -263,74 +217,67 @@ function drawRun(){
   const xs = YR.filter(y=>Y(y).current_pln>0 || Y(y).capital_pln>0);
   const cur = xs.map(y=>Math.round(Y(y).current_pln/Y(y).pop));
   const cap = xs.map(y=>Math.round(Y(y).capital_pln/Y(y).pop));
-  // stacked: capital on top of current
   const stack = xs.map((y,i)=>cur[i]+cap[i]);
-  const ymax=Math.max(...stack)*1.08;
-  const svg = plot([
+  document.getElementById("run").innerHTML = plot([
     {vals:stack, color:"#f4731c", area:true, fill:0.16},
     {vals:cur, color:"#9fb0c0", area:true, fill:0.16},
-  ], {xkeys:xs, ymax, ylabel:_t("axis_zl_cap")});
-  document.getElementById("run").innerHTML = svg;
+  ], {xkeys:xs, ymax:Math.max(...stack)*1.08, ylabel:_t("axis_zl_cap")});
 }
 
-function drawMap(){
-  const W=560,H=460;
-  let g="";
-  // bay (top-right arc) + water tint
-  g+=`<path d="M${W},0 L${W},${H} L${W*0.62},${H} Q${W*0.74},${H*0.5} ${W*0.9},${H*0.28} Q${W},${H*0.16} ${W},0 Z" fill="#0f1a24"/>`;
-  g+=`<text x="${W*0.86}" y="${H*0.2}" class="maphint" text-anchor="middle">Zatoka Gdańska</text>`;
-  // motlawa hint
-  g+=`<path d="M${W*0.7},${H*0.3} C${W*0.66},${H*0.5} ${W*0.7},${H*0.68} ${W*0.66},${H*0.86}" stroke="#19384d" stroke-width="6" fill="none" opacity="0.7"/>`;
-  // district hints
-  [["Wrzeszcz",0.42,0.33],["Śródmieście",0.6,0.55],["Przymorze",0.5,0.14],["Południe",0.5,0.8],["lotnisko",0.12,0.46]].forEach(d=>{
-    g+=`<text x="${(d[1]*W).toFixed(0)}" y="${(d[2]*H).toFixed(0)}" class="maphint" text-anchor="middle" opacity="0.55">${d[0]}</text>`;
-  });
-  // pins
-  const rad = c => c==null ? 7 : Math.max(7, Math.min(26, Math.sqrt(c)*0.65));
-  PROJECTS.forEach(p=>{
-    const cx=p.x/100*W, cy=p.y/100*H, col=MODE_COLOR[p.mode]||"#999";
-    g+=`<circle class="pin" cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${rad(p.cost).toFixed(1)}" fill="${col}" fill-opacity="0.22" stroke="${col}" stroke-width="1.6" data-k="${p.key}"><title></title></circle>`;
-    g+=`<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="2.5" fill="${col}"/>`;
-  });
-  document.getElementById("map").innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
+// --- interactive investment map (Leaflet) ---
+let _map=null, _layer=null, _mode="all";
+function popupHtml(p){
+  const mln=_t("pop_mln");
+  let s=`<b>${p.n}</b><br>${p.yr} · ${p.tot.toLocaleString("pl-PL")} ${mln}`;
+  s+=`<br>${_t("pop_city")}: ${p.city.toLocaleString("pl-PL")} ${mln}`;
+  if(p.ue>0) s+=` · ${_t("pop_ue")}: ${p.ue.toLocaleString("pl-PL")} ${mln}`;
+  return s;
 }
-
-function renderProjects(){
-  const lang = UI.lang;
-  const rep=_t("reported"), pl=_t("planned"), modes=(window.T[lang]||{}).modes||{};
-  document.getElementById("plist").innerHTML = PROJECTS.map(p=>{
+function drawMarkers(){
+  if(!_layer) return;
+  _layer.clearLayers();
+  const rec = document.getElementById("recOnly").checked;
+  (INVEST.projects||[]).forEach(p=>{
+    if(_mode!=="all" && p.mode!==_mode) return;
+    if(rec && p.yr<2018) return;
     const col=MODE_COLOR[p.mode]||"#999";
-    const nm = lang==="pl"? p.name_pl : p.name;
-    const bl = lang==="pl"? p.blurb_pl : p.blurb;
-    const cost = p.cost==null ? "—" : `${mlnLabel(p)} zł`;
-    const yr = p.year>=2026 ? `${p.year} · ${pl}` : `${p.year}`;
-    return `<div class="pitem"><span class="dot" style="background:${col}"></span>`+
-      `<span class="nm">${nm}</span>`+
-      `<span class="meta">${yr}<br><span class="cost">${cost}</span></span>`+
-      `<span class="bl">${bl} · ${modes[p.mode]||p.mode}</span></div>`;
-  }).join("");
-  // map tooltips
-  document.querySelectorAll("#map .pin title").forEach((t,i)=>{});
-  document.querySelectorAll("#map .pin").forEach(c=>{
-    const p=PROJECTS.find(x=>x.key===c.dataset.k); if(!p) return;
-    const nm = lang==="pl"? p.name_pl : p.name;
-    c.querySelector("title").textContent = `${nm} — ${p.cost==null?"—":mlnLabel(p)+" zł"} (${p.year})`;
+    L.circleMarker([p.lat,p.lon], {
+      radius: Math.max(4, Math.min(34, Math.sqrt(p.tot)*3.3)),
+      color:col, weight:1.3, fillColor:col, fillOpacity:0.42
+    }).bindPopup(popupHtml(p)).addTo(_layer);
   });
-  // legend
-  const order=["road","tunnel","rail","tram","bike","hub","maintenance"];
-  document.getElementById("mlegend").innerHTML = order.map(m=>
-    `<span><i style="background:${MODE_COLOR[m]}"></i>${modes[m]||m}</span>`).join("");
+}
+function initMap(){
+  if(typeof L==="undefined") return;
+  _map = L.map("map", {scrollWheelZoom:false}).setView([54.372,18.62], 11);
+  L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+    attribution:'© OpenStreetMap, © CARTO', subdomains:"abcd", maxZoom:18
+  }).addTo(_map);
+  _layer = L.layerGroup().addTo(_map);
+  drawMarkers();
+  document.querySelectorAll("#modeFilter button").forEach(b=>b.addEventListener("click",()=>{
+    _mode=b.dataset.m;
+    document.querySelectorAll("#modeFilter button").forEach(x=>x.classList.toggle("on", x===b));
+    drawMarkers();
+  }));
+  document.getElementById("recOnly").addEventListener("change", drawMarkers);
+}
+function drawLegend(){
+  document.getElementById("mlegend").innerHTML =
+    `<span><i style="background:${MODE_COLOR.road}"></i>${_t("leg_road")}</span>`+
+    `<span><i style="background:${MODE_COLOR.transit}"></i>${_t("leg_transit")}</span>`;
 }
 
-function renderAll(){ drawFlip(); drawRun(); drawMap(); renderProjects(); }
-renderAll();
-window.addEventListener("uichange", renderAll);
+function renderCharts(){ drawFlip(); drawRun(); drawLegend(); if(_map) drawMarkers(); }
+renderCharts();
+initMap();
+window.addEventListener("uichange", renderCharts);
 """
 
 
-def _render_html(budget: dict) -> str:
+def _render_html(budget: dict, invest: dict) -> str:
     cfg = json.dumps(budget, ensure_ascii=False)
-    proj = json.dumps(PROJECTS, ensure_ascii=False)
+    inv = json.dumps(invest, ensure_ascii=False)
     colors = json.dumps(MODE_COLOR, ensure_ascii=False)
     strings = json.dumps(STRINGS, ensure_ascii=False)
     lang_bar = (
@@ -344,6 +291,7 @@ def _render_html(budget: dict) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gdańsk transport budget · roads vs transit</title>
 {_FONTS}
+{_LEAFLET}
 <style>{_STYLE}{ui.SELECTOR_CSS}</style>
 </head>
 <body>
@@ -390,35 +338,43 @@ def _render_html(budget: dict) -> str:
 
 <section class="reveal">
   <p class="eyebrow" data-i18n="map_eye">On the ground</p>
-  <h2 data-i18n="map_h">What the capital half bought</h2>
+  <h2 data-i18n="map_h">What the capital actually built, and where</h2>
   <p class="lede" data-i18n="map_lede">Named investments by mode.</p>
-  <div class="grid">
-    <div class="card"><div id="map"></div>
-      <div class="legend" id="mlegend"></div>
-      <p class="note" data-i18n="map_note">Schematic — positions approximate.</p>
+  <div class="mapctl">
+    <div class="seg" id="modeFilter" role="group">
+      <button data-m="all" class="on" data-i18n="f_all">All</button>
+      <button data-m="road" data-i18n="f_road">Roads</button>
+      <button data-m="transit" data-i18n="f_transit">Transit</button>
     </div>
-    <div class="plist" id="plist"></div>
+    <label class="rec"><input type="checkbox" id="recOnly"> <span data-i18n="f_recent">2018+ only</span></label>
   </div>
+  <div id="map"></div>
+  <div class="legend" id="mlegend"></div>
+  <p class="note" data-i18n="map_note">Source · Gdańska Mapa Inwestycji.</p>
 </section>
 
-<footer><div data-i18n="src">Source · GUS BDL.</div></footer>
+<footer><div data-i18n="src">Source · GUS BDL + Gdańska Mapa Inwestycji.</div></footer>
 </div>
 """
     return (
         head
-        + "<script>\nconst BUDGET = " + cfg + ";\nconst PROJECTS = " + proj
+        + "<script>\nconst BUDGET = " + cfg + ";\nconst INVEST = " + inv
         + ";\nconst MODE_COLOR = " + colors + ";\nwindow.T = " + strings + ";\n"
         + ui.SELECTOR_JS + "\n" + _JS + "</script>\n</body>\n</html>\n"
     )
 
 
-def render_stage3(*, budget_path: str = DEFAULT_BUDGET, output_dir: str = "public",
-                  filename: str = "practice.html") -> str:
+def render_stage3(*, budget_path: str = DEFAULT_BUDGET, invest_path: str = DEFAULT_INVEST,
+                  output_dir: str = "public", filename: str = "practice.html") -> str:
     with open(budget_path, encoding="utf-8") as f:
         budget = json.load(f)
+    invest = {"projects": []}
+    if os.path.exists(invest_path):
+        with open(invest_path, encoding="utf-8") as f:
+            invest = json.load(f)
     os.makedirs(output_dir, exist_ok=True)
     out_path = os.path.join(output_dir, filename)
     with open(out_path, "w", encoding="utf-8") as f:
-        f.write(_render_html(budget))
+        f.write(_render_html(budget, invest))
     logger.info("Rendered Stage 3 (Gdańsk transport) → %s", out_path)
     return out_path

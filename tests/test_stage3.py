@@ -1,82 +1,89 @@
-"""Surface 3 — Gdańsk transport budget page: data shape, projects, render."""
+"""Surface 3 — Gdańsk transport budget + investment map: data, render."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
 
-import pytest
-
-from src import stage3
-from src.stage3 import MODE_COLOR, PROJECTS, STRINGS, render_stage3
+from src.stage3 import MODE_COLOR, STRINGS, render_stage3
 
 BUDGET = Path("data/stage3_gdansk_transport.json")
+INVEST = Path("data/stage3_gdansk_investments.json")
 
 
-class TestData:
-    def test_budget_file_present_and_shaped(self):
+class TestBudget:
+    def test_shaped(self):
         d = json.loads(BUDGET.read_text(encoding="utf-8"))
-        assert "years" in d and d["years"]
         any_year = next(iter(d["years"].values()))
         for k in ("total_pln", "roads_pln", "nonroad_transport_pln", "current_pln", "capital_pln", "pop"):
             assert k in any_year
 
     def test_roads_chapters_only_from_2012(self):
-        # BDL's road-chapter series starts 2012; earlier years carry no roads split.
         d = json.loads(BUDGET.read_text(encoding="utf-8"))["years"]
         assert d["2012"]["roads_pln"] > 0
         assert d.get("2010", {}).get("roads_pln", 0) == 0
 
     def test_the_flip_direction(self):
-        # roads share of the transport budget falls between 2012 and 2024.
         d = json.loads(BUDGET.read_text(encoding="utf-8"))["years"]
         assert d["2012"]["roads_share"] > d["2024"]["roads_share"]
 
 
-class TestProjects:
-    def test_every_project_has_a_known_mode_colour(self):
-        for p in PROJECTS:
+class TestInvestments:
+    def test_present_and_modes_known(self):
+        d = json.loads(INVEST.read_text(encoding="utf-8"))
+        assert d["projects"]
+        for p in d["projects"]:
             assert p["mode"] in MODE_COLOR
 
-    def test_positions_inside_schematic_box(self):
-        for p in PROJECTS:
-            assert 0 <= p["x"] <= 100 and 0 <= p["y"] <= 100
+    def test_coords_inside_gdansk_bbox(self):
+        d = json.loads(INVEST.read_text(encoding="utf-8"))["projects"]
+        for p in d:
+            assert 54.2 <= p["lat"] <= 54.5 and 18.3 <= p["lon"] <= 19.05
 
-    def test_costs_are_numeric_or_none(self):
-        for p in PROJECTS:
-            assert p["cost"] is None or isinstance(p["cost"], (int, float))
+    def test_costs_present_and_positive(self):
+        d = json.loads(INVEST.read_text(encoding="utf-8"))["projects"]
+        for p in d:
+            assert p["tot"] > 0 and p["city"] >= 0 and p["ue"] >= 0
+            assert 2000 <= p["yr"] <= 2030
 
-    def test_both_languages_on_every_project(self):
-        for p in PROJECTS:
-            assert p["name"] and p["name_pl"] and p["blurb"] and p["blurb_pl"]
+    def test_both_modes_represented(self):
+        d = json.loads(INVEST.read_text(encoding="utf-8"))["projects"]
+        modes = {p["mode"] for p in d}
+        assert {"road", "transit"} <= modes
 
 
 class TestStrings:
     def test_en_and_pl_have_same_keys(self):
         assert set(STRINGS["en"]) == set(STRINGS["pl"])
 
-    def test_nav_practice_label_present(self):
-        assert STRINGS["en"]["nav_practice"] and STRINGS["pl"]["nav_practice"]
+    def test_nav_and_map_labels_present(self):
+        for lang in ("en", "pl"):
+            for k in ("nav_practice", "f_road", "f_transit", "pop_city", "leg_transit"):
+                assert STRINGS[lang][k]
 
 
 class TestRender:
-    def test_renders_self_contained_page(self, tmp_path):
-        out = render_stage3(budget_path=str(BUDGET), output_dir=str(tmp_path), filename="practice.html")
+    def test_renders_with_embedded_data_and_map(self, tmp_path):
+        out = render_stage3(budget_path=str(BUDGET), invest_path=str(INVEST),
+                            output_dir=str(tmp_path), filename="practice.html")
         html = Path(out).read_text(encoding="utf-8")
         assert html.startswith("<!doctype html>")
-        # data embedded, no external JS/CDN script tags
-        assert "const BUDGET =" in html and "const PROJECTS =" in html
-        assert "<script src=" not in html
-        # selectors + nav wired
-        assert 'id="langSeg"' in html
-        assert 'href="practice.html"' in html and 'class="here"' in html
-        # the three sections render their mount points
-        for mount in ('id="flip"', 'id="run"', 'id="map"', 'id="plist"'):
+        # data embedded inline (no fetch at runtime for our own data)
+        assert "const BUDGET =" in html and "const INVEST =" in html
+        # interactive Leaflet map wired in
+        assert "leaflet@1.9.4" in html
+        for mount in ('id="flip"', 'id="run"', 'id="map"', 'id="modeFilter"', 'id="recOnly"'):
             assert mount in html
+        # nav cross-links + active page
+        assert 'href="practice.html"' in html and 'class="here"' in html
+
+    def test_handles_missing_investments_file(self, tmp_path):
+        out = render_stage3(budget_path=str(BUDGET), invest_path=str(tmp_path / "nope.json"),
+                            output_dir=str(tmp_path))
+        assert "const INVEST =" in Path(out).read_text(encoding="utf-8")
 
     def test_no_marketplace_rows_leak(self, tmp_path):
-        # this surface is public-finance only — never any listing fields.
-        out = render_stage3(budget_path=str(BUDGET), output_dir=str(tmp_path))
+        out = render_stage3(budget_path=str(BUDGET), invest_path=str(INVEST), output_dir=str(tmp_path))
         html = Path(out).read_text(encoding="utf-8").lower()
         for bad in ("listing_uid", "seller_name", "otomoto", "olx.pl"):
             assert bad not in html
