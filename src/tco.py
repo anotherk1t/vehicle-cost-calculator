@@ -611,7 +611,7 @@ function render(){
 
   const ch = chosen();
   $("confnote").innerHTML = (ch && ch.reliable===false)
-    ? fmt(_t("conf_limited")||"⚠ limited data for this {what} — read the curve's <b>shape</b>, not its exact złoty.",
+    ? fmt(_t("conf_limited")||"⚠ limited data for this {what} — read the curve's <b>shape</b>, not its exact amount.",
         {what: state.model ? (_t("model_word")||"model") : (_t("category_word")||"category")})
     : "";
 
@@ -859,7 +859,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "buy_pay": "You pay <b>{paid}</b> today; after {hold} {yr} it sits at <b>{end}</b> on the fitted curve.",
         "flat_young": "⚠ Near-new depreciation is uncertain here — too few young listings, so the curve is artificially flat. Treat it as a floor; real loss is higher.",
         "flat_floor": "The curve is flat here — the vehicle is near its value floor. Most of the drop is behind it. Used ownership gets cheap at this point.",
-        "conf_limited": "⚠ limited data for this {what} — read the curve's <b>shape</b>, not its exact złoty.",
+        "conf_limited": "⚠ limited data for this {what} — read the curve's <b>shape</b>, not its exact amount.",
         "gathering": "<b>Gathering data:</b> {list} — not enough clean listings yet.",
     },
     "pl": {

@@ -133,7 +133,25 @@ section{margin-top:3.4rem}
 h2{font-family:"Archivo Black",sans-serif; font-weight:400; font-size:clamp(1.5rem,3.4vw,2.1rem);
   letter-spacing:-.01em; margin:.3rem 0 .5rem}
 .lede{color:#bac2cb; max-width:64ch; margin:0 0 1.3rem}
-.card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:1.2rem 1.3rem}
+.card{position:relative; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:1.2rem 1.3rem}
+.exp{position:absolute; top:.7rem; right:.7rem; z-index:3; appearance:none; cursor:pointer;
+  width:30px; height:30px; border-radius:9px; border:1px solid var(--line);
+  background:rgba(13,18,23,.72); color:var(--muted); font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; transition:.15s}
+.exp:hover{color:var(--ink); border-color:var(--road); background:rgba(13,18,23,.96)}
+.xhair{pointer-events:none}
+.xhair line{stroke:var(--ink); stroke-opacity:.4; stroke-width:1; stroke-dasharray:4 3}
+.xtip rect{fill:rgba(8,12,16,.92); stroke:var(--line); stroke-width:.5}
+.xtip text{font-family:"IBM Plex Mono",monospace}
+.lb{position:fixed; inset:0; z-index:60; background:rgba(6,9,12,.86); backdrop-filter:blur(5px);
+  display:flex; align-items:center; justify-content:center; padding:4vmin; animation:rise .25s ease both}
+.lb[hidden]{display:none}
+.lb-card{position:relative; background:var(--panel); border:1px solid var(--line); border-radius:18px;
+  padding:2.4rem 1.7rem 1.5rem; width:min(1120px,95vw); box-shadow:0 50px 140px -50px #000}
+.lb-x{position:absolute; top:.8rem; right:.9rem; appearance:none; cursor:pointer; background:transparent;
+  border:0; color:var(--muted); font-size:1.15rem; line-height:1}
+.lb-x:hover{color:var(--ink)}
+.lb-body svg{width:100%; height:auto}
 /* Scope to our chart containers only — a bare `svg{}` rule also matches Leaflet's
    internal vector overlay pane and collapses the circle markers (tiles are <img>,
    so the basemap shows but the overlay disappears). */
@@ -197,8 +215,13 @@ function plot(series, opts){
     const last=pts[pts.length-1];
     g+=`<circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="3.5" fill="${s.color}"/>`;
   });
-  g+=`<text x="${mL-34}" y="${mT-2}" font-family="IBM Plex Mono" font-size="10" fill="#8b97a6">${opts.ylabel||""}</text>`;
-  return `<svg viewBox="0 0 ${W} ${H}" role="img">${g}</svg>`;
+  // ylabel inside the chart area (top-left) so it never overlaps the left-margin tick values
+  if(opts.ylabel) g+=`<text x="${mL+4}" y="${mT+12}" font-family="IBM Plex Mono" font-size="10" fill="#8b97a6" text-anchor="start">${opts.ylabel}</text>`;
+  // transparent capture rect for hover, plus data-meta for wireHoverS
+  g+=`<rect x="0" y="0" width="${W}" height="${H}" fill="transparent" pointer-events="all"/>`;
+  const _ls = series.map(s=>({color:s.color,name:s.name||"",pts:xs.map((xx,j)=>[xx,s.vals[j]]).filter(p=>p[1]!=null)}));
+  const _m = JSON.stringify({w:W,h:H,pad:{l:mL,r:mR,t:mT,b:mB},xmin:x0,xmax:x1,ymin,ymax,fmt:"",series:_ls}).replace(/'/g,"&#39;");
+  return `<svg viewBox="0 0 ${W} ${H}" role="img" data-meta='${_m}'>${g}</svg>`;
 }
 
 function drawFlip(){
@@ -206,8 +229,8 @@ function drawFlip(){
   const roads = xs.map(y=>Y(y).roads_per_cap);
   const tr = xs.map(y=>Y(y).nonroad_per_cap);
   document.getElementById("flip").innerHTML = plot([
-    {vals:tr, color:"#34d399", area:true, fill:0.14},
-    {vals:roads, color:"#f4a31c", area:true, fill:0.14},
+    {vals:tr, color:"#34d399", area:true, fill:0.14, name:_t("flip_transit")||"Transit"},
+    {vals:roads, color:"#f4a31c", area:true, fill:0.14, name:_t("flip_roads")||"Roads"},
   ], {xkeys:xs, ylabel:_t("axis_zl_cap")});
   const first=Y(xs[0]), last=Y(xs[xs.length-1]);
   document.getElementById("flipShareA").textContent = fmt(_t("flip_share"),{v:first.roads_share});
@@ -222,8 +245,8 @@ function drawRun(){
   const cap = xs.map(y=>Math.round(Y(y).capital_pln/Y(y).pop));
   const stack = xs.map((y,i)=>cur[i]+cap[i]);
   document.getElementById("run").innerHTML = plot([
-    {vals:stack, color:"#f4731c", area:true, fill:0.16},
-    {vals:cur, color:"#9fb0c0", area:true, fill:0.16},
+    {vals:stack, color:"#f4731c", area:true, fill:0.16, name:"Total"},
+    {vals:cur, color:"#9fb0c0", area:true, fill:0.16, name:_t("run_current")||"Current"},
   ], {xkeys:xs, ymax:Math.max(...stack)*1.08, ylabel:_t("axis_zl_cap")});
 }
 
@@ -271,10 +294,102 @@ function drawLegend(){
     `<span><i style="background:${MODE_COLOR.transit}"></i>${_t("leg_transit")}</span>`;
 }
 
-function renderCharts(){ drawFlip(); drawRun(); drawLegend(); if(_map) drawMarkers(); }
+function renderCharts(){ drawFlip(); drawRun(); drawLegend(); if(_map) drawMarkers(); enhanceChartsS(); }
 renderCharts();
 initMap();
 window.addEventListener("uichange", renderCharts);
+
+// --- hover crosshair + expand-to-lightbox for the two budget charts ---
+const _NSS = "http://www.w3.org/2000/svg";
+function _valAtS(pts, x){
+  if(!pts.length) return null;
+  if(x<=pts[0][0]) return pts[0][1];
+  if(x>=pts[pts.length-1][0]) return pts[pts.length-1][1];
+  for(let i=0;i<pts.length-1;i++){
+    const a=pts[i], b=pts[i+1];
+    if(x>=a[0] && x<=b[0]) return a[1]+(b[1]-a[1])*((x-a[0])/((b[0]-a[0])||1));
+  }
+  return null;
+}
+function wireHoverS(svg){
+  if(svg.__wired) return; svg.__wired=true;
+  const m=JSON.parse(svg.getAttribute("data-meta"));
+  const {w,h,pad,xmin,xmax,ymin,ymax,series}=m;
+  const X=x=>pad.l+(x-xmin)/((xmax-xmin)||1)*(w-pad.l-pad.r);
+  const Y=y=>h-pad.b-(y-ymin)/((ymax-ymin)||1)*(h-pad.t-pad.b);
+  const g=document.createElementNS(_NSS,"g"); g.setAttribute("class","xhair"); g.style.display="none";
+  const vl=document.createElementNS(_NSS,"line"); g.appendChild(vl);
+  const dots=document.createElementNS(_NSS,"g"); g.appendChild(dots);
+  const tip=document.createElementNS(_NSS,"g"); tip.setAttribute("class","xtip");
+  const tr=document.createElementNS(_NSS,"rect"); tr.setAttribute("rx","5"); tip.appendChild(tr);
+  const tt=document.createElementNS(_NSS,"text"); tip.appendChild(tt);
+  g.appendChild(tip); svg.appendChild(g);
+  function move(e){
+    const r=svg.getBoundingClientRect(); if(!r.width) return;
+    const vbx=(e.clientX-r.left)/r.width*w;
+    let xv=Math.round((vbx-pad.l)/((w-pad.l-pad.r)||1)*(xmax-xmin)+xmin);
+    xv=Math.max(xmin,Math.min(xmax,xv));
+    const cx=X(xv);
+    g.style.display="";
+    vl.setAttribute("x1",cx); vl.setAttribute("x2",cx);
+    vl.setAttribute("y1",pad.t); vl.setAttribute("y2",h-pad.b);
+    while(dots.firstChild) dots.removeChild(dots.firstChild);
+    while(tt.firstChild) tt.removeChild(tt.firstChild);
+    const lines=[{t:xv.toString(),c:"#eef1f3"}]; let maxlen=4;
+    series.forEach(s=>{
+      const v=_valAtS(s.pts,xv); if(v==null) return;
+      const d=document.createElementNS(_NSS,"circle");
+      d.setAttribute("cx",cx); d.setAttribute("cy",Y(v)); d.setAttribute("r","3.4");
+      d.setAttribute("fill",s.color); d.setAttribute("stroke","#0c0f12"); d.setAttribute("stroke-width","1");
+      dots.appendChild(d);
+      const t=(s.name?s.name+"  ":"")+Math.round(v).toLocaleString("pl-PL");
+      lines.push({t,c:s.color}); maxlen=Math.max(maxlen,t.length);
+    });
+    const lh=15,px2=9,py2=7;
+    lines.forEach((ln,i)=>{
+      const ts=document.createElementNS(_NSS,"tspan");
+      ts.setAttribute("x",px2); ts.setAttribute("dy",i?lh:0);
+      ts.setAttribute("fill",ln.c); ts.setAttribute("font-size","11");
+      ts.textContent=ln.t; tt.appendChild(ts);
+    });
+    const tw=maxlen*6.7+px2*2,th=lines.length*lh+py2*2;
+    let tx=cx+12; if(tx+tw>w-pad.r) tx=cx-12-tw; if(tx<pad.l) tx=pad.l;
+    tip.setAttribute("transform","translate("+tx+","+(pad.t+6)+")");
+    tr.setAttribute("width",tw); tr.setAttribute("height",th);
+    tt.setAttribute("y",py2+11);
+  }
+  svg.addEventListener("mousemove",move);
+  svg.addEventListener("mouseleave",()=>{ g.style.display="none"; });
+}
+let _lbS;
+function openLBS(svg){
+  if(!_lbS){
+    _lbS=document.createElement("div"); _lbS.className="lb"; _lbS.hidden=true;
+    _lbS.innerHTML='<div class="lb-card"><button class="lb-x" aria-label="close">&#10005;</button><div class="lb-body"></div></div>';
+    document.body.appendChild(_lbS);
+    _lbS.addEventListener("click",e=>{ if(e.target===_lbS||e.target.closest(".lb-x")) _lbS.hidden=true; });
+    document.addEventListener("keydown",e=>{ if(e.key==="Escape") _lbS.hidden=true; });
+  }
+  const body=_lbS.querySelector(".lb-body"); body.innerHTML="";
+  const clone=svg.cloneNode(true);
+  clone.querySelectorAll(".xhair").forEach(n=>n.remove());
+  clone.__wired=false;
+  body.appendChild(clone); wireHoverS(clone);
+  _lbS.hidden=false;
+}
+function addExpandS(card){
+  if(card.__exp) return;
+  if(!card.querySelector("svg[data-meta]")) return;
+  card.__exp=true;
+  const b=document.createElement("button");
+  b.className="exp"; b.type="button"; b.title="Expand"; b.innerHTML="&#10530;";
+  b.addEventListener("click",()=>{ const svg=card.querySelector("svg[data-meta]"); if(svg) openLBS(svg); });
+  card.appendChild(b);
+}
+function enhanceChartsS(){
+  document.querySelectorAll("svg[data-meta]").forEach(wireHoverS);
+  document.querySelectorAll(".card").forEach(addExpandS);
+}
 """
 
 

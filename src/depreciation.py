@@ -297,7 +297,7 @@ document.querySelector("#classes").innerHTML = present.map((cc,i)=>{
   const badge = low ? `<span class="lowbadge">limited data</span>` : "";
   return `<div class="card cls reveal${low?' low':''}" style="--accent:${HEAT[cc]}; animation-delay:${(0.05*i).toFixed(2)}s">
     <h3>${cc}cc ${badge}</h3><p class="sub">anchor ${a.anchor.toLocaleString("pl-PL")} PLN · ${spot}${low?' · curve not yet trustworthy':''}</p>${mini}
-    <table><thead><tr><th>age</th><th>fit PLN</th><th>kept</th><th>depr/yr</th><th>med km</th><th>n</th></tr></thead><tbody>${rows}</tbody></table>
+    <div style="overflow-x:auto"><table><thead><tr><th>age</th><th>fit PLN</th><th>kept</th><th>depr/yr</th><th>med km</th><th>n</th></tr></thead><tbody>${rows}</tbody></table></div>
   </div>`;
 }).join("");
 
