@@ -785,10 +785,10 @@ def _sections() -> str:
   <div class="soon">
     <span class="tag">Coming soon</span>
     <h3>Buy in February, sell in May</h3>
-    <p>Two-wheeler prices swing with the season — a bike costs more in spring than
-    in the dead of winter. Once a full year of tracking is banked, this panel will
-    show the cheapest month to buy, the dearest to sell, and the złoty that timing
-    alone saves on top of the curve above.</p>
+    <p>Prices swing with the season — a bike costs more in spring than in winter.
+    The panel opens when the tracker has twelve months of data. Then: cheapest
+    month to buy, dearest to sell, and the złoty timing alone saves on top of the
+    curve.</p>
     <div class="ghost">
       <span>cheapest to buy<b>Feb?</b></span>
       <span>dearest to sell<b>May?</b></span>
@@ -801,11 +801,11 @@ def _sections() -> str:
   <p class="eyebrow">How to read this</p>
   <h2>It's a band, not a verdict</h2>
   <div class="note">
-    <h2>Three honest caveats</h2>
+    <h2>Three caveats</h2>
     <ul>
       <li><b>Depreciation is ours; the rest is modelled.</b> The value curve is
       real data. Fuel, the service/wear reserve and fees are coefficient estimates
-      — that's why the yearly figure is shown as a <b>range</b>, swung by the wear
+      — that's why we show the yearly figure as a <b>range</b>, swung by the wear
       reserve.</li>
       <li><b>Insurance is yours.</b> We refuse to guess it — paste a real OC/AC
       quote and the receipt updates. The default is only a placeholder.</li>
@@ -825,7 +825,7 @@ def _gate() -> str:
     <h2>Depreciation engine warming up</h2>
     <p class="lede" style="margin:.6rem auto 0">The calculator runs on real
     value-vs-age curves, and none are banked yet. Once the tracker has enough
-    listings per engine class, this page fills in automatically.</p>
+    listings per engine class, the curves appear automatically.</p>
   </div>
 </section>
 """
@@ -836,7 +836,7 @@ STRINGS: dict[str, dict[str, str]] = {
     "en": {
         "veh_moto": "Moto", "veh_car": "Car",
         "h1": "The sticker is<br>the small print",
-        "dek": "A vehicle's real cost isn't its price — it's what it loses, burns and bills you every year. This adds it all up, per kilometre, on top of the depreciation we actually measure.",
+        "dek": "A vehicle loses value, burns fuel, and sends you a service bill every year. This totals all three — per kilometre, on depreciation curves measured from actual PL listings.",
         "nav_cost": "Personal cost", "nav_ledger": "Public-money ledger", "nav_depr": "Depreciation curves",
         "nav_practice": "In practice",
         "foot1": "METHOD · depreciation read off cross-sectional value-vs-age curves, scaled to your price. Fuel/service/fees are coefficient models, user-adjustable.",
@@ -856,9 +856,9 @@ STRINGS: dict[str, dict[str, str]] = {
         "comp_insurance": "Insurance (OC/AC)", "comp_fees": "Fees & PCC tax",
         "per_km": "zł / km", "range_fmt": "range {lo} – {hi} /yr", "year": "year", "years": "years",
         "life": "Over <b>{hold} {yr}</b> at <b>{km} km/yr</b> you'll spend about <b>{life}</b> — of which <b>{share}%</b> is value it loses while parked.",
-        "buy_pay": "You pay <b>{paid}</b> today; after {hold} {yr} the curve says it's worth about <b>{end}</b>.",
-        "flat_young": "⚠ Near-new depreciation here isn't resolved yet — too few young listings, so the curve is flat where it shouldn't be. Treat this as a floor; real loss is likely higher.",
-        "flat_floor": "The curve is flat here — it's near its value floor, having done most of its depreciating already. That's when a used vehicle is cheapest to own.",
+        "buy_pay": "You pay <b>{paid}</b> today; after {hold} {yr} it sits at <b>{end}</b> on the fitted curve.",
+        "flat_young": "⚠ Near-new depreciation is uncertain here — too few young listings, so the curve is artificially flat. Treat it as a floor; real loss is higher.",
+        "flat_floor": "The curve is flat here — the vehicle is near its value floor. Most of the drop is behind it. Used ownership gets cheap at this point.",
         "conf_limited": "⚠ limited data for this {what} — read the curve's <b>shape</b>, not its exact złoty.",
         "gathering": "<b>Gathering data:</b> {list} — not enough clean listings yet.",
     },
@@ -922,9 +922,9 @@ def _render_html(agg: dict, car_agg: dict | None = None) -> str:
   {ui.selector_bar()}
   <p class="kicker">Poland · used-vehicle ownership · {year}</p>
   <h1 data-i18n-html="h1">The sticker is<br>the small print</h1>
-  <p class="dek" data-i18n="dek">A vehicle's real cost isn't its price — it's what it
-  loses, burns and bills you every year. This adds it all up, per kilometre, on top
-  of the depreciation we actually measure.</p>
+  <p class="dek" data-i18n="dek">A vehicle loses value, burns fuel, and sends you a
+  service bill every year. This totals all three — per kilometre, on depreciation
+  curves measured from actual PL listings.</p>
   <div class="rule"></div>
   <nav class="nav">
     <a href="cost.html" class="here" data-i18n="nav_cost">Personal cost</a>

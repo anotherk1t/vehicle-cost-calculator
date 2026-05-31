@@ -163,7 +163,7 @@ footer{margin-top:3.4rem; padding-top:1.4rem; border-top:1px solid var(--line);
 @media (prefers-reduced-motion:reduce){.reveal{animation:none}}
 """
 
-STRINGS = {'en': {'veh_moto': 'Moto', 'veh_car': 'Car', 'h1': 'How fast a<br>vehicle bleeds value', 'dek_moto': 'Cross-sectional depreciation curves by engine class, read off private-seller listings and smoothed with weighted isotonic regression.', 'dek_car': 'Per-model depreciation curves for the Polish used-car market — value vs age from private-seller listings.', 'nav_cost': 'Personal cost', 'nav_ledger': 'Public-money ledger', 'nav_depr': 'Depreciation curves', 'nav_practice': 'In practice', 'car_eye': 'By model', 'car_h': 'Car depreciation by model', 'car_lede': 'Per-model value-vs-age curves from PL private-seller car listings (the most-listed models). Dots are raw medians, the band is P25–P75, the line is the smoothed fit. Read the shape: how much value each model keeps.', 'car_none': 'No car curves yet.'}, 'pl': {'veh_moto': 'Moto', 'veh_car': 'Auto', 'h1': 'Jak szybko<br>pojazd traci wartość', 'dek_moto': 'Przekrojowe krzywe utraty wartości wg klasy silnika, odczytane z ofert prywatnych i wygładzone regresją izotoniczną.', 'dek_car': 'Krzywe utraty wartości per model dla polskiego rynku aut używanych — wartość względem wieku z ofert prywatnych.', 'nav_cost': 'Koszt osobisty', 'nav_ledger': 'Bilans publiczny', 'nav_depr': 'Krzywe wartości', 'nav_practice': 'W praktyce', 'car_eye': 'Wg modelu', 'car_h': 'Utrata wartości aut wg modelu', 'car_lede': 'Krzywe wartość-wiek per model z polskich ofert prywatnych (najczęściej wystawiane modele). Kropki to mediany, pasmo to P25–P75, linia to dopasowanie. Patrz na kształt: ile wartości utrzymuje dany model.', 'car_none': 'Brak krzywych dla aut.'}}
+STRINGS = {'en': {'veh_moto': 'Moto', 'veh_car': 'Car', 'h1': 'How fast a<br>vehicle bleeds value', 'dek_moto': 'Cross-sectional depreciation curves by engine class, read off private-seller listings and smoothed with weighted isotonic regression.', 'dek_car': 'Per-model depreciation curves for the Polish used-car market — value vs age from private-seller listings.', 'nav_cost': 'Personal cost', 'nav_ledger': 'Public-money ledger', 'nav_depr': 'Depreciation curves', 'nav_practice': 'In practice', 'car_eye': 'By model', 'car_h': 'Car depreciation by model', 'car_lede': 'Per-model value-vs-age curves from PL private-seller listings, highest-volume models first. Dots = raw medians, band = P25–P75, line = smoothed fit. Focus on the shape — how steeply each model drops.', 'car_none': 'No car curves yet.'}, 'pl': {'veh_moto': 'Moto', 'veh_car': 'Auto', 'h1': 'Jak szybko<br>pojazd traci wartość', 'dek_moto': 'Przekrojowe krzywe utraty wartości wg klasy silnika, odczytane z ofert prywatnych i wygładzone regresją izotoniczną.', 'dek_car': 'Krzywe utraty wartości per model dla polskiego rynku aut używanych — wartość względem wieku z ofert prywatnych.', 'nav_cost': 'Koszt osobisty', 'nav_ledger': 'Bilans publiczny', 'nav_depr': 'Krzywe wartości', 'nav_practice': 'W praktyce', 'car_eye': 'Wg modelu', 'car_h': 'Utrata wartości aut wg modelu', 'car_lede': 'Krzywe wartość-wiek per model z polskich ofert prywatnych (najczęściej wystawiane modele). Kropki to mediany, pasmo to P25–P75, linia to dopasowanie. Patrz na kształt: ile wartości utrzymuje dany model.', 'car_none': 'Brak krzywych dla aut.'}}
 
 # Plain (non-f-string) JS — single braces, no escaping. `AGG` is prepended by
 # the renderer. This draws every chart client-side from the embedded aggregates.
@@ -309,7 +309,7 @@ document.querySelector("#classes").innerHTML = present.map((cc,i)=>{
   const entries = Object.entries(AGG.models||{})
     .filter(([n,m]) => m.points && m.points.length)
     .sort((a,b) => (b[1].n_samples||0)-(a[1].n_samples||0));
-  if(!entries.length){ host.innerHTML = `<p class="lede">No per-model curves yet — needs more data per model.</p>`; return; }
+  if(!entries.length){ host.innerHTML = `<p class="lede">No per-model curves yet — not enough listings per model.</p>`; return; }
   const k5 = pts => { const p = pts.find(p=>p.age===5); return p ? Math.round(p.retained_pct)+"%" : "·"; };
   host.innerHTML = entries.map(([name,a],i)=>{
     const pts=a.points, low=a.reliable===false;
@@ -487,7 +487,7 @@ def _render_html(agg: dict, car_agg: dict | None = None) -> str:
 <header class="reveal">
   {ui.selector_bar()}
   <p class="kicker">Polish used market · reference year {year}</p>
-  <h1 data-i18n-html="h1">How fast a<br>bike bleeds value</h1>
+  <h1 data-i18n-html="h1">How fast a<br>vehicle bleeds value</h1>
   <p class="dek" id="dek" data-i18n="dek_moto">Cross-sectional depreciation curves by engine class, read off
   private-seller listings and smoothed with weighted isotonic regression.</p>
   <div class="redline"></div>
@@ -537,15 +537,15 @@ def _data_sections() -> str:
   <p class="eyebrow">Figure 02</p>
   <h2>Value retained</h2>
   <p class="lede">Each class indexed to 100% at its youngest tracked cohort — the
-  lower a line falls, the faster that class hands value to the next owner.</p>
+  lower a line falls, the faster that class loses value.</p>
   <div class="card"><div id="retention"></div><div id="retentionLegend"></div></div>
 </section>
 
 <section class="reveal" style="animation-delay:.16s">
   <p class="eyebrow">The read</p>
   <h2>Summary &amp; buy timing</h2>
-  <p class="lede">"Buy from" marks the first age where yearly value loss drops below
-  8% of the near-new price — past the cliff the first owner already paid.</p>
+  <p class="lede">"Buy from" marks the first age where annual value loss drops below
+  8% of the near-new price — past the cliff the first owner paid.</p>
   <div class="card"><div id="summary"></div></div>
   <div class="note">
     <h2>Where registration data plugs in</h2>

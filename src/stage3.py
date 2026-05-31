@@ -50,7 +50,7 @@ STRINGS = {
     "en": {
         "kicker": "Gdańsk · public transport budget · 2004–2024",
         "h1": "Where the city's<br>mobility money goes",
-        "dek": "Not a polemic — Gdańsk's own transport budget, read off GUS public finance data. Who gets the money: road builders, or the people on trams and trains?",
+        "dek": "Gdańsk's own transport budget, pulled from GUS public finance data. The split between road builders and transit passengers, in złoty per resident.",
         "nav_cost": "Personal cost", "nav_ledger": "Public-money ledger",
         "nav_depr": "Depreciation curves", "nav_practice": "In practice",
         "flip_eye": "The flip", "flip_h": "Roads vs transit, per resident",
@@ -303,7 +303,7 @@ def _render_html(budget: dict, invest: dict) -> str:
   {lang_bar}
   <p class="kicker" data-i18n="kicker">Gdańsk · public transport budget · 2004–2024</p>
   <h1 data-i18n-html="h1">Where the city's<br>mobility money goes</h1>
-  <p class="dek" data-i18n="dek">Not a polemic — Gdańsk's own transport budget.</p>
+  <p class="dek" data-i18n="dek">Gdańsk's own transport budget, pulled from GUS public finance data.</p>
   <div class="redline"></div>
   <nav class="nav">
     <a href="cost.html" data-i18n="nav_cost">Personal cost</a>

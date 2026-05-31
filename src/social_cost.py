@@ -449,7 +449,7 @@ STRINGS: dict[str, dict[str, str]] = {
     "en": {
         "veh_moto": "Moto", "veh_car": "Car",
         "h1": "Who pays<br>for your ride?",
-        "dek": "Every kilometre you drive, you hand the state some tax and impose some cost on everyone else. This reconciles the two — and shows the share of your own footprint you actually cover.",
+        "dek": "Every kilometre you drive, you hand the state some tax and impose some cost on everyone else. The two rarely match — this shows how much of your road use you actually cover.",
         "nav_cost": "Personal cost", "nav_ledger": "Public-money ledger", "nav_depr": "Depreciation curves",
         "nav_practice": "In practice",
         "lbl_vehicle": "Vehicle", "lbl_km": "Distance per year", "km_year": "km / year",
@@ -461,7 +461,7 @@ STRINGS: dict[str, dict[str, str]] = {
         "cr_fuel": "Fuel tax", "cr_reg": "Registration & przegląd", "cr_sub": "Purchase subsidy (amortised)",
         "say_none": "No measurable footprint.",
         "say_recipient": "The state spends more <b>on</b> you than you cost it — a net <b>recipient</b> of public money, while your footprint stays {ext}/yr.",
-        "say_cover": "You cover <b>{cov}%</b> of the <b>{ext}/yr</b> you cost everyone else. The remaining <b>{net}/yr</b> is carried by the public across {km} km.",
+        "say_cover": "You cover <b>{cov}%</b> of the <b>{ext}/yr</b> you cost everyone else. The public covers the remaining <b>{net}/yr</b> across {km} km.",
     },
     "pl": {
         "veh_moto": "Moto", "veh_car": "Auto",
@@ -587,8 +587,8 @@ def _render_html(*, year: int) -> str:
   <p class="kicker">Poland · personal road ledger · {year}</p>
   <h1 data-i18n-html="h1">Who pays<br>for your ride?</h1>
   <p class="dek" data-i18n="dek">Every kilometre you drive, you hand the state some tax and impose
-  some cost on everyone else. This reconciles the two — and shows the share of
-  your own footprint you actually cover.</p>
+  some cost on everyone else. The two rarely match — this shows how much of your
+  road use you actually cover.</p>
   <div class="rule"></div>
   <nav class="nav">
     <a href="cost.html" data-i18n="nav_cost">Personal cost</a>
@@ -667,12 +667,11 @@ def _render_html(*, year: int) -> str:
 <section class="reveal">
   <p class="eyebrow">The twist</p>
   <h2>Going electric covers <em>less</em>, not more</h2>
-  <p class="lede">Switch the vehicle to <b>electric</b>. The cost side barely
-  moves — crashes and congestion are most of it and an EV imposes both — yet
-  the payment side collapses: almost no fuel tax, plus a purchase grant. The
-  result inverts the intuition: the public covers a <em>bigger</em> share of an
-  EV's footprint than a petrol car's. That is a deliberate decarbonisation
-  subsidy, not a free lunch — worth seeing plainly.</p>
+  <p class="lede">Switch to <b>electric</b>. The cost side barely moves — crashes
+  and congestion are most of it, and an EV imposes both. The payment side
+  collapses: almost no fuel tax, plus a purchase grant. So the public ends up
+  covering a <em>bigger</em> share of an EV's footprint than a petrol car's.
+  That's a deliberate decarbonisation subsidy, not a free lunch — worth knowing.</p>
   <div class="note">
     <h2>How to read this</h2>
     <ul>
@@ -683,9 +682,9 @@ def _render_html(*, year: int) -> str:
       time-specific cost; the selector swings it from open road to rush-hour core.
       Two-wheelers filter traffic, so theirs stays zero — which is where a
       scooter quietly wins a dense city.</li>
-      <li><b>A scooter isn't a free angel.</b> Given its own profile it still
-      carries real crash cost — but much of that risk is the rider's own, and
-      most of the rest is imposed <em>by</em> car drivers.</li>
+      <li><b>A scooter isn't a free angel.</b> It still carries real crash cost —
+      though most of that risk falls on the rider, and much of the rest comes from
+      car drivers.</li>
       <li><b>This is a model to argue with.</b> Every rate above is editable.</li>
     </ul>
   </div>
