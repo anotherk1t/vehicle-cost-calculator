@@ -98,8 +98,8 @@ COMPONENT_ORDER: list[tuple[str, str]] = [
 COMPONENT_COLORS: dict[str, str] = {
     "depreciation": "#f35b04",
     "fuel": "#f7b801",
-    "service": "#4cc9f0",
-    "insurance": "#9d7bff",
+    "service": "#46c08d",
+    "insurance": "#28d6a3",
     "fees": "#6b7280",
 }
 
@@ -281,8 +281,8 @@ _FONTS = (
 _STYLE = """
 :root{
   --bg:#0b0b0f; --panel:#15151d; --panel-2:#0f0f15; --ink:#ece8e1; --muted:#8d8a83;
-  --line:#24242e; --violet:#9d7bff; --violet-dim:#5b46a8; --orange:#f35b04;
-  --amber:#f7b801; --cyan:#4cc9f0; --red:#d62828; --paper:#191921;
+  --line:#24242e; --green:#28d6a3; --orange:#f35b04;
+  --amber:#f7b801; --red:#d62828; --paper:#191921;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -291,7 +291,7 @@ body{margin:0; background:var(--bg); color:var(--ink);
 body::before{content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.05;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
 body::after{content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
-  background:radial-gradient(120% 75% at 85% -10%, rgba(157,123,255,.10), transparent 55%),
+  background:radial-gradient(120% 75% at 85% -10%, rgba(247,184,1,.10), transparent 55%),
              radial-gradient(110% 70% at -5% 110%, rgba(243,91,4,.07), transparent 55%)}
 .wrap{position:relative; z-index:1; max-width:1120px; margin:0 auto; padding:0 22px 5rem}
 .mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
@@ -299,18 +299,18 @@ body::after{content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
 /* hero */
 header{padding:5rem 0 2rem; border-bottom:1px solid var(--line)}
 .kicker{font-family:"IBM Plex Mono",monospace; letter-spacing:.34em; text-transform:uppercase;
-  font-size:.7rem; color:var(--violet); margin:0 0 1.1rem}
+  font-size:.7rem; color:var(--amber); margin:0 0 1.1rem}
 h1{font-family:"Anton",Impact,sans-serif; font-weight:400; text-transform:uppercase;
   font-size:clamp(2.8rem,8.5vw,6rem); line-height:.9; letter-spacing:.01em; margin:0;
-  background:linear-gradient(95deg,var(--violet),var(--amber) 55%,var(--orange));
+  background:linear-gradient(95deg,var(--green),var(--amber) 55%,var(--orange));
   -webkit-background-clip:text; background-clip:text; color:transparent}
 .dek{font-size:1.16rem; color:#cfcabf; max-width:50ch; margin:1.3rem 0 0; font-style:italic}
 .rule{height:3px; margin:1.9rem 0 0; border-radius:2px;
-  background:linear-gradient(90deg,var(--violet),var(--amber) 55%,var(--orange))}
+  background:linear-gradient(90deg,var(--green),var(--amber) 55%,var(--orange))}
 .nav{display:flex; gap:.4rem 1.2rem; flex-wrap:wrap; margin-top:1.5rem;
   font-family:"IBM Plex Mono",monospace; font-size:.74rem}
 .nav a{color:var(--muted); text-decoration:none; border-bottom:1px dotted transparent; padding-bottom:1px}
-.nav a:hover{color:var(--violet); border-bottom-color:var(--violet)}
+.nav a:hover{color:var(--amber); border-bottom-color:var(--amber)}
 .nav a.here{color:var(--ink)}
 
 /* controls */
@@ -322,7 +322,7 @@ h1{font-family:"Anton",Impact,sans-serif; font-weight:400; text-transform:upperc
   background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:.55rem .9rem;
   cursor:pointer; transition:.18s; line-height:1.2}
 .mode-btn small{display:block; color:var(--muted); font-size:.66rem; margin-top:2px}
-.mode-btn:hover{border-color:var(--violet)}
+.mode-btn:hover{border-color:var(--amber)}
 .mode-btn[aria-pressed="true"]{background:var(--ink); color:#0b0b0f; border-color:var(--ink)}
 .mode-btn[aria-pressed="true"] small{color:#3a3a3a}
 .heldnote{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--muted); margin:.7rem 0 0}
@@ -332,7 +332,7 @@ h1{font-family:"Anton",Impact,sans-serif; font-weight:400; text-transform:upperc
 .modelsel:disabled{opacity:.5}
 .row{display:flex; gap:1.4rem; flex-wrap:wrap}
 .row .field{flex:1; min-width:210px}
-input[type=range]{width:100%; accent-color:var(--violet); cursor:pointer}
+input[type=range]{width:100%; accent-color:var(--amber); cursor:pointer}
 .sliderline{display:flex; align-items:baseline; gap:.55rem; margin-bottom:.4rem}
 .sliderline b{font-family:"IBM Plex Mono",monospace; font-size:1.4rem; color:var(--ink)}
 .sliderline span{font-family:"IBM Plex Mono",monospace; font-size:.72rem; color:var(--muted)}
@@ -345,8 +345,8 @@ input[type=range]{width:100%; accent-color:var(--violet); cursor:pointer}
 .odo .head{font-family:"IBM Plex Mono",monospace; letter-spacing:.24em; text-transform:uppercase;
   font-size:.68rem; color:var(--muted)}
 .perkm{font-family:"Anton",sans-serif; font-weight:400; line-height:.9; margin:.35rem 0 0;
-  font-size:clamp(3.4rem,13vw,7rem); color:var(--violet); letter-spacing:.005em;
-  text-shadow:0 0 40px rgba(157,123,255,.25)}
+  font-size:clamp(3.4rem,13vw,7rem); color:var(--amber); letter-spacing:.005em;
+  text-shadow:0 0 40px rgba(247,184,1,.22)}
 .perkm .u{font-family:"IBM Plex Mono",monospace; font-size:1.1rem; color:var(--muted);
   -webkit-text-fill-color:var(--muted); text-shadow:none; margin-left:.4rem}
 .odo .yr{font-family:"IBM Plex Mono",monospace; font-size:1.05rem; color:#d7d2c7; margin:.8rem 0 0}
@@ -367,16 +367,16 @@ input[type=range]{width:100%; accent-color:var(--violet); cursor:pointer}
 .line .nm{flex:1; color:#d7d2c7}
 .line .pc{color:var(--muted); font-size:.74rem; width:3.2em; text-align:right}
 .line .v{color:var(--ink); width:7em; text-align:right; font-variant-numeric:tabular-nums}
-.line.user .nm{color:var(--violet)}
+.line.user .nm{color:var(--amber)}
 .tot{display:flex; justify-content:space-between; align-items:baseline; margin-top:.9rem;
   font-family:"IBM Plex Mono",monospace; font-weight:600}
-.tot .v{font-size:1.25rem; color:var(--violet)}
+.tot .v{font-size:1.25rem; color:var(--amber)}
 
 /* sections */
 section{margin-top:3.2rem}
 .eyebrow{font-family:"IBM Plex Mono",monospace; letter-spacing:.28em; text-transform:uppercase;
   font-size:.72rem; color:var(--muted); display:flex; align-items:center; gap:.8rem}
-.eyebrow::before{content:""; width:26px; height:2px; background:var(--violet)}
+.eyebrow::before{content:""; width:26px; height:2px; background:var(--amber)}
 h2{font-family:"Anton",sans-serif; font-weight:400; text-transform:uppercase; letter-spacing:.02em;
   font-size:1.85rem; margin:.5rem 0 .3rem}
 .lede{color:var(--muted); margin:.1rem 0 1.2rem; max-width:64ch}
@@ -410,7 +410,7 @@ details.adv[open] summary{color:var(--ink); border-bottom:1px solid var(--line)}
   font-family:"IBM Plex Mono",monospace; font-size:.78rem; color:var(--muted)}
 .soon .ghost b{display:block; font-size:1.5rem; color:#5a5852; filter:blur(.5px)}
 
-.note{border-left:3px solid var(--violet); background:rgba(157,123,255,.05); margin-top:1.2rem;
+.note{border-left:3px solid var(--amber); background:rgba(247,184,1,.05); margin-top:1.2rem;
   padding:1.1rem 1.4rem; border-radius:0 12px 12px 0; color:#cfcabf; font-size:1.02rem}
 .note h2{font-size:1.45rem; margin:.1rem 0 .5rem} .note ul{margin:.6rem 0 0; padding-left:1.1rem}
 .note li{margin:.5rem 0} .note b{color:var(--ink)}
@@ -553,9 +553,9 @@ function holdChart(r){
   // shaded hold window between buy age and sell age
   const a0=state.age, a1=Math.min(state.age+state.hold, xmax);
   const vx0=X(a0), vx1=X(a1);
-  s+=`<rect x="${vx0}" y="${pad.t}" width="${Math.max(0,vx1-vx0)}" height="${h-pad.t-pad.b}" fill="#9d7bff" fill-opacity="0.12"/>`;
-  s+=`<line x1="${vx0}" y1="${pad.t}" x2="${vx0}" y2="${h-pad.b}" stroke="#9d7bff" stroke-width="1.4" stroke-dasharray="3 3"/>`;
-  s+=`<line x1="${vx1}" y1="${pad.t}" x2="${vx1}" y2="${h-pad.b}" stroke="#9d7bff" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+  s+=`<rect x="${vx0}" y="${pad.t}" width="${Math.max(0,vx1-vx0)}" height="${h-pad.t-pad.b}" fill="#f7b801" fill-opacity="0.12"/>`;
+  s+=`<line x1="${vx0}" y1="${pad.t}" x2="${vx0}" y2="${h-pad.b}" stroke="#f7b801" stroke-width="1.4" stroke-dasharray="3 3"/>`;
+  s+=`<line x1="${vx1}" y1="${pad.t}" x2="${vx1}" y2="${h-pad.b}" stroke="#f7b801" stroke-width="1.4" stroke-dasharray="3 3"/>`;
 
   // value curve
   const d = pts.map((p,i)=>`${i?'L':'M'}${X(p.age)},${Y(p.val)}`).join(" ");
@@ -563,11 +563,11 @@ function holdChart(r){
 
   // buy + sell markers
   const buyV=interp(r.curve,state.age)*r.scale, sellV=interp(r.curve,state.age+state.hold)*r.scale;
-  s+=`<circle cx="${X(a0)}" cy="${Y(buyV)}" r="5" fill="#9d7bff"/>`;
-  s+=`<circle cx="${vx1}" cy="${Y(sellV)}" r="5" fill="#9d7bff" fill-opacity="0.6" stroke="#9d7bff"/>`;
+  s+=`<circle cx="${X(a0)}" cy="${Y(buyV)}" r="5" fill="#f7b801"/>`;
+  s+=`<circle cx="${vx1}" cy="${Y(sellV)}" r="5" fill="#f7b801" fill-opacity="0.6" stroke="#f7b801"/>`;
   // bled-value bracket label
   const midx=(vx0+vx1)/2;
-  s+=`<text x="${midx}" y="${pad.t+16}" fill="#9d7bff" font-size="12" text-anchor="middle" font-family="IBM Plex Mono,monospace">−${Math.round(buyV-sellV).toLocaleString("pl-PL")} zł</text>`;
+  s+=`<text x="${midx}" y="${pad.t+16}" fill="#f7b801" font-size="12" text-anchor="middle" font-family="IBM Plex Mono,monospace">−${Math.round(buyV-sellV).toLocaleString("pl-PL")} zł</text>`;
   return s+`</svg>`;
 }
 
@@ -605,7 +605,7 @@ function render(){
     if(state.age <= 4 && anchorScaled && r.valueEnd >= 0.78*anchorScaled)
       buy += ` <span style="color:var(--amber)">${_t("flat_young")||"⚠ Near-new depreciation here isn't resolved yet — treat this as a floor; real loss is likely higher."}</span>`;
     else
-      buy += ` <span style="color:var(--cyan)">${_t("flat_floor")||"The curve is flat here — it's near its value floor, having done most of its depreciating already."}</span>`;
+      buy += ` <span style="color:var(--amber)">${_t("flat_floor")||"The curve is flat here — it's near its value floor, having done most of its depreciating already."}</span>`;
   }
   $("buynote").innerHTML = buy;
 
@@ -695,7 +695,7 @@ def _controls() -> str:
       <p class="heldnote" id="heldNote"></p>
     </div>
     <div class="field">
-      <label><span data-i18n="model_label">Model</span> · <span id="modelhint" style="text-transform:none;letter-spacing:0;color:var(--violet)">optional</span></label>
+      <label><span data-i18n="model_label">Model</span> · <span id="modelhint" style="text-transform:none;letter-spacing:0;color:var(--amber)">optional</span></label>
       <select id="model" class="modelsel"></select>
       <p class="heldnote" id="confnote" style="color:var(--amber)"></p>
     </div>
@@ -762,7 +762,7 @@ def _sections() -> str:
     <div class="field"><label>Service reserve (zł / 1000 km)</label>
       <input type="number" id="svc" step="5" placeholder="—"></div>
     <div class="field"><label class="mono" style="display:flex;align-items:center;gap:.55rem;color:var(--ink);font-size:.8rem;text-transform:none;letter-spacing:0">
-      <input type="checkbox" id="pcc" checked style="accent-color:var(--violet);width:16px;height:16px"> charge 2% PCC purchase tax</label></div>
+      <input type="checkbox" id="pcc" checked style="accent-color:var(--amber);width:16px;height:16px"> charge 2% PCC purchase tax</label></div>
   </div>
 </details>
 
@@ -778,7 +778,7 @@ def _sections() -> str:
     <p class="lede" id="buynote" style="margin:.9rem 0 0"></p>
     <div class="legend">
       <span><i style="background:#f35b04"></i>fitted value</span>
-      <span><i class="sh" style="background:#9d7bff"></i>your hold window</span>
+      <span><i class="sh" style="background:rgba(247,184,1,.35);border:1px solid #f7b801"></i>your hold window</span>
     </div>
   </div>
 
