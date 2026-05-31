@@ -134,7 +134,10 @@ h2{font-family:"Archivo Black",sans-serif; font-weight:400; font-size:clamp(1.5r
   letter-spacing:-.01em; margin:.3rem 0 .5rem}
 .lede{color:#bac2cb; max-width:64ch; margin:0 0 1.3rem}
 .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:1.2rem 1.3rem}
-svg{display:block; width:100%; height:auto; overflow:visible}
+/* Scope to our chart containers only — a bare `svg{}` rule also matches Leaflet's
+   internal vector overlay pane and collapses the circle markers (tiles are <img>,
+   so the basemap shows but the overlay disappears). */
+#flip svg,#run svg{display:block; width:100%; height:auto; overflow:visible}
 .legend{display:flex; gap:1.1rem; flex-wrap:wrap; font-family:"IBM Plex Mono",monospace;
   font-size:.76rem; color:var(--muted); margin-top:.8rem}
 .legend i{display:inline-block; width:11px; height:11px; border-radius:50%; margin-right:.4rem; vertical-align:-1px}

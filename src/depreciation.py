@@ -58,7 +58,7 @@ _FONTS = (
 _STYLE = """
 :root{
   --bg:#0c0c0f; --panel:#15151b; --panel-2:#101015; --ink:#ece8e1; --muted:#8f8a80;
-  --line:#26262e; --amber:#f7b801; --orange:#f35b04; --red:#d62828; --cyan:#4cc9f0;
+  --line:#26262e; --amber:#f7b801; --orange:#f35b04; --red:#d62828; --green:#46c08d;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -79,11 +79,11 @@ header{padding:5rem 0 2rem; border-bottom:1px solid var(--line)}
   font-size:.7rem; color:var(--amber); margin:0 0 1.1rem}
 h1{font-family:"Anton",Impact,sans-serif; font-weight:400; text-transform:uppercase;
   font-size:clamp(2.9rem,8.5vw,6.2rem); line-height:.92; letter-spacing:.01em; margin:0;
-  background:linear-gradient(92deg,var(--cyan),var(--amber) 48%,var(--red));
+  background:linear-gradient(92deg,var(--green),var(--amber) 48%,var(--red));
   -webkit-background-clip:text; background-clip:text; color:transparent}
 .dek{font-size:1.16rem; color:#cfcabf; max-width:46ch; margin:1.3rem 0 0; font-style:italic}
 .redline{height:3px; margin:1.9rem 0 0; border-radius:2px;
-  background:linear-gradient(90deg,var(--cyan),var(--amber) 50%,var(--red))}
+  background:linear-gradient(90deg,var(--green),var(--amber) 50%,var(--red))}
 .nav{display:flex; gap:.4rem 1.2rem; flex-wrap:wrap; margin-top:1.5rem;
   font-family:"IBM Plex Mono",monospace; font-size:.74rem}
 .nav a{color:var(--muted); text-decoration:none; border-bottom:1px dotted transparent; padding-bottom:1px}
@@ -101,9 +101,32 @@ section{margin-top:3rem}
 h2{font-family:"Anton",sans-serif; font-weight:400; text-transform:uppercase; letter-spacing:.02em;
   font-size:1.9rem; margin:.5rem 0 .2rem}
 .lede{color:var(--muted); margin:.1rem 0 1.2rem; max-width:64ch}
-.card{background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--line);
+.card{position:relative; background:linear-gradient(180deg,var(--panel),var(--panel-2)); border:1px solid var(--line);
   border-radius:14px; padding:1.3rem 1.4rem; box-shadow:0 24px 60px -36px rgba(0,0,0,.9)}
 svg{width:100%; height:auto; display:block}
+
+/* expand-to-lightbox button (top-right of any card holding a chart) */
+.exp{position:absolute; top:.7rem; right:.7rem; z-index:3; appearance:none; cursor:pointer;
+  width:30px; height:30px; border-radius:9px; border:1px solid var(--line);
+  background:rgba(16,16,21,.72); color:var(--muted); font-size:1rem; line-height:1;
+  display:inline-flex; align-items:center; justify-content:center; transition:.15s}
+.exp:hover{color:var(--ink); border-color:var(--amber); background:rgba(16,16,21,.96)}
+/* hover crosshair + value tooltip drawn into each chart's SVG */
+.xhair{pointer-events:none}
+.xhair line{stroke:var(--ink); stroke-opacity:.4; stroke-width:1; stroke-dasharray:4 3}
+.xtip rect{fill:rgba(8,8,11,.92); stroke:var(--line)}
+.xtip text{font-family:"IBM Plex Mono",monospace}
+/* lightbox */
+.lb{position:fixed; inset:0; z-index:60; background:rgba(6,6,9,.86); backdrop-filter:blur(5px);
+  display:flex; align-items:center; justify-content:center; padding:4vmin; animation:rise .25s ease both}
+.lb[hidden]{display:none}
+.lb-card{position:relative; background:linear-gradient(180deg,var(--panel),var(--panel-2));
+  border:1px solid var(--line); border-radius:18px; padding:2.4rem 1.7rem 1.5rem;
+  width:min(1120px,95vw); box-shadow:0 50px 140px -50px #000}
+.lb-x{position:absolute; top:.8rem; right:.9rem; appearance:none; cursor:pointer; background:transparent;
+  border:0; color:var(--muted); font-size:1.15rem; line-height:1}
+.lb-x:hover{color:var(--ink)}
+.lb-body svg{width:100%; height:auto}
 
 .legend{display:flex; flex-wrap:wrap; gap:.4rem 1.2rem; margin-top:.7rem;
   font-family:"IBM Plex Mono",monospace; font-size:.74rem; color:var(--muted)}
@@ -127,7 +150,7 @@ tbody tr:hover{background:rgba(247,184,1,.05)}
   color:var(--amber); border:1px dashed rgba(247,184,1,.5); border-radius:999px; padding:1px 7px; vertical-align:middle}
 .card.low{opacity:.82}
 
-.note{border-left:3px solid var(--cyan); background:rgba(76,201,240,.05); margin-top:1.1rem;
+.note{border-left:3px solid var(--green); background:rgba(70,192,141,.06); margin-top:1.1rem;
   padding:1.1rem 1.4rem; border-radius:0 12px 12px 0; color:#cfcabf; font-size:1.02rem}
 .note h2{font-size:1.45rem; margin:.1rem 0 .5rem} .note ul{margin:.6rem 0 0; padding-left:1.1rem}
 .note li{margin:.5rem 0} .note b{color:var(--ink)}
@@ -145,7 +168,13 @@ STRINGS = {'en': {'veh_moto': 'Moto', 'veh_car': 'Car', 'h1': 'How fast a<br>veh
 # Plain (non-f-string) JS — single braces, no escaping. `AGG` is prepended by
 # the renderer. This draws every chart client-side from the embedded aggregates.
 _JS = r"""
-const M = AGG.meta, HEAT = M.heat, ORDER = M.cc_order;
+const M = AGG.meta, ORDER = M.cc_order;
+// Engine palette ramps small→big through cyan/blue; recolour to a no-blue
+// green→red heat ramp (keyed by engine-size order) for the public page.
+const _RAMP = ["#46c08d","#a7c957","#f7b801","#f35b04","#d62828"];
+const HEAT = {};
+(ORDER||[]).forEach((cc,i)=>{ HEAT[cc] = _RAMP[Math.min(i,_RAMP.length-1)]; });
+Object.keys(M.heat||{}).forEach(cc=>{ if(!(cc in HEAT)) HEAT[cc] = M.heat[cc]; });
 const present = ORDER.filter(cc => AGG.classes[cc] && AGG.classes[cc].points.length);
 // Classes whose curve the engine trusts. Unreliable ones (thin/noisy data) are
 // kept out of the headline figures + summary and only shown, badged, per-class.
@@ -172,7 +201,8 @@ function smoothPath(pts){
 
 // Generic multi-series line chart → SVG string.
 // series: [{color, line:[[x,y]], dots:[[x,y]], band:[[x,lo,hi]]}]
-function chart(series, {h=380, yfmt=fmtK, xlabel="AGE (YEARS)"} = {}){
+function chart(series, {h=380, fmt="k", xlabel="AGE (YEARS)"} = {}){
+  const yfmt = fmt==="pct" ? fmtPct : fmtK;
   const w = 820, pad = {l:54, r:16, t:14, b:34};
   const xs=[], ys=[];
   series.forEach(s=>{
@@ -185,7 +215,11 @@ function chart(series, {h=380, yfmt=fmtK, xlabel="AGE (YEARS)"} = {}){
   if(ymax===ymin) ymax=ymin+1;
   const X = x => pad.l + (x-xmin)/((xmax-xmin)||1) * (w-pad.l-pad.r);
   const Y = y => h-pad.b - (y-ymin)/((ymax-ymin)||1) * (h-pad.t-pad.b);
-  let out = `<svg viewBox="0 0 ${w} ${h}" role="img">`;
+  // stash everything the hover layer needs (single-quoted attr → escape apostrophes)
+  const lineSeries = series.filter(s=>s.line && s.line.length>1)
+    .map(s=>({color:s.color, name:s.name||"", pts:s.line}));
+  const metaAttr = JSON.stringify({w,h,pad,xmin,xmax,ymin,ymax,fmt,series:lineSeries}).replace(/'/g,"&#39;");
+  let out = `<svg viewBox="0 0 ${w} ${h}" role="img" data-meta='${metaAttr}'>`;
   for(let i=0;i<=4;i++){
     const yv = ymin + (ymax-ymin)*i/4, py = Y(yv);
     out += `<line x1="${pad.l}" y1="${py}" x2="${w-pad.r}" y2="${py}" stroke="#ffffff" stroke-opacity="0.06"/>`;
@@ -207,6 +241,8 @@ function chart(series, {h=380, yfmt=fmtK, xlabel="AGE (YEARS)"} = {}){
       out += `<path d="${smoothPath(px)}" fill="none" stroke="${s.color}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>`;
     }
   });
+  // transparent capture rect on top so mousemove fires anywhere over the plot
+  out += `<rect x="0" y="0" width="${w}" height="${h}" fill="transparent" pointer-events="all"/>`;
   return out + `</svg>`;
 }
 
@@ -217,7 +253,7 @@ function legend(list){
 // Figure 01 — price vs age (trusted classes only)
 const overview = shown.map(cc=>{
   const pts = AGG.classes[cc].points;
-  return {color:HEAT[cc], line:pts.map(p=>[p.age,p.smooth]), dots:pts.map(p=>[p.age,p.median])};
+  return {color:HEAT[cc], name:cc+"cc", line:pts.map(p=>[p.age,p.smooth]), dots:pts.map(p=>[p.age,p.median])};
 });
 document.querySelector("#overview").innerHTML = chart(overview);
 document.querySelector("#overviewLegend").innerHTML = legend(shown);
@@ -225,9 +261,9 @@ document.querySelector("#overviewLegend").innerHTML = legend(shown);
 // Figure 02 — value retained
 const retention = shown.map(cc=>{
   const pts = AGG.classes[cc].points;
-  return {color:HEAT[cc], line:pts.map(p=>[p.age,p.retained_pct])};
+  return {color:HEAT[cc], name:cc+"cc", line:pts.map(p=>[p.age,p.retained_pct])};
 });
-document.querySelector("#retention").innerHTML = chart(retention, {yfmt:fmtPct});
+document.querySelector("#retention").innerHTML = chart(retention, {fmt:"pct"});
 document.querySelector("#retentionLegend").innerHTML = legend(shown);
 
 // Summary table — trusted classes only
@@ -248,7 +284,7 @@ document.querySelector("#summary").innerHTML =
 // Per-class cards — show every class, badge the low-confidence ones
 document.querySelector("#classes").innerHTML = present.map((cc,i)=>{
   const a = AGG.classes[cc], pts = a.points, low = a.reliable===false;
-  const mini = chart([{color:HEAT[cc],
+  const mini = chart([{color:HEAT[cc], name:cc+"cc",
       band: pts.map(p=>[p.age,p.p25,p.p75]),
       dots: pts.map(p=>[p.age,p.median]),
       line: pts.map(p=>[p.age,p.smooth])}], {h:300});
@@ -277,7 +313,7 @@ document.querySelector("#classes").innerHTML = present.map((cc,i)=>{
   const k5 = pts => { const p = pts.find(p=>p.age===5); return p ? Math.round(p.retained_pct)+"%" : "·"; };
   host.innerHTML = entries.map(([name,a],i)=>{
     const pts=a.points, low=a.reliable===false;
-    const mini = chart([{color:VIO,
+    const mini = chart([{color:VIO, name:name,
       band: pts.map(p=>[p.age,p.p25,p.p75]),
       dots: pts.map(p=>[p.age,p.median]),
       line: pts.map(p=>[p.age,p.smooth])}], {h:240});
@@ -293,7 +329,7 @@ document.querySelector("#classes").innerHTML = present.map((cc,i)=>{
 (function(){
   const host = document.querySelector("#carmodels");
   if(!host || typeof AGG_CAR === "undefined") return;
-  const VIO = "#9d7bff";
+  const VIO = "#46c08d";
   const tc = s => (s||"").replace(/(^|[\s-])\w/g, c => c.toUpperCase());
   const k5 = pts => { const p = pts.find(p=>p.age===5); return p ? Math.round(p.retained_pct)+"%" : "·"; };
   const ms = Object.entries(AGG_CAR.models||{})
@@ -301,7 +337,7 @@ document.querySelector("#classes").innerHTML = present.map((cc,i)=>{
     .sort((a,b) => (b[1].n_samples||0)-(a[1].n_samples||0));
   host.innerHTML = ms.length ? ms.map(([name,a],i)=>{
     const pts=a.points;
-    const mini = chart([{color:VIO, band:pts.map(p=>[p.age,p.p25,p.p75]), dots:pts.map(p=>[p.age,p.median]), line:pts.map(p=>[p.age,p.smooth])}], {h:240});
+    const mini = chart([{color:VIO, name:tc(name), band:pts.map(p=>[p.age,p.p25,p.p75]), dots:pts.map(p=>[p.age,p.median]), line:pts.map(p=>[p.age,p.smooth])}], {h:240});
     return `<div class="card cls reveal" style="--accent:${VIO}; animation-delay:${(0.02*i).toFixed(2)}s"><h3 style="font-size:1.1rem">${tc(name)}</h3><p class="sub">${a.fuel||"—"} · anchor ${a.anchor.toLocaleString("pl-PL")} PLN · kept 5y ${k5(pts)} · n=${a.n_samples}</p>${mini}</div>`;
   }).join("") : `<p class="lede">${_t("car_none")||"No car curves yet."}</p>`;
 })();
@@ -315,6 +351,100 @@ function applyVeh(){
 }
 window.addEventListener("uichange", applyVeh);
 applyVeh();
+
+// --- chart interactivity: hover crosshair + value readout, expand-to-lightbox ---
+const _NS = "http://www.w3.org/2000/svg";
+function _valAt(pts, age){
+  if(!pts.length) return null;
+  if(age<=pts[0][0]) return pts[0][1];
+  if(age>=pts[pts.length-1][0]) return pts[pts.length-1][1];
+  for(let i=0;i<pts.length-1;i++){
+    const a=pts[i], b=pts[i+1];
+    if(age>=a[0] && age<=b[0]) return a[1]+(b[1]-a[1])*((age-a[0])/((b[0]-a[0])||1));
+  }
+  return null;
+}
+function _fmtVal(v, fmt){ return fmt==="pct" ? Math.round(v)+"%" : Math.round(v).toLocaleString("pl-PL"); }
+function wireHover(svg){
+  if(svg.__wired) return; svg.__wired = true;
+  const m = JSON.parse(svg.getAttribute("data-meta"));
+  const {w,h,pad,xmin,xmax,ymin,ymax,fmt,series} = m;
+  const X = x => pad.l + (x-xmin)/((xmax-xmin)||1) * (w-pad.l-pad.r);
+  const Y = y => h-pad.b - (y-ymin)/((ymax-ymin)||1) * (h-pad.t-pad.b);
+  const g = document.createElementNS(_NS,"g"); g.setAttribute("class","xhair"); g.style.display="none";
+  const vline = document.createElementNS(_NS,"line"); g.appendChild(vline);
+  const dots = document.createElementNS(_NS,"g"); g.appendChild(dots);
+  const tip = document.createElementNS(_NS,"g"); tip.setAttribute("class","xtip");
+  const trect = document.createElementNS(_NS,"rect"); trect.setAttribute("rx","5"); tip.appendChild(trect);
+  const ttext = document.createElementNS(_NS,"text"); tip.appendChild(ttext);
+  g.appendChild(tip); svg.appendChild(g);
+  function move(e){
+    const r = svg.getBoundingClientRect(); if(!r.width) return;
+    const vbx = (e.clientX - r.left)/r.width * w;
+    let age = (vbx-pad.l)/((w-pad.l-pad.r)||1)*(xmax-xmin)+xmin;
+    age = Math.max(xmin, Math.min(xmax, Math.round(age)));
+    const cx = X(age);
+    g.style.display = "";
+    vline.setAttribute("x1",cx); vline.setAttribute("x2",cx);
+    vline.setAttribute("y1",pad.t); vline.setAttribute("y2",h-pad.b);
+    while(dots.firstChild) dots.removeChild(dots.firstChild);
+    while(ttext.firstChild) ttext.removeChild(ttext.firstChild);
+    const lines = [{t:age+"y", c:"#ece8e1"}]; let maxlen = 4;
+    series.forEach(s=>{
+      const v = _valAt(s.pts, age); if(v==null) return;
+      const d = document.createElementNS(_NS,"circle");
+      d.setAttribute("cx",cx); d.setAttribute("cy",Y(v)); d.setAttribute("r","3.4");
+      d.setAttribute("fill",s.color); d.setAttribute("stroke","#0c0c0f"); d.setAttribute("stroke-width","1");
+      dots.appendChild(d);
+      const t = (s.name?s.name+"  ":"") + _fmtVal(v, fmt);
+      lines.push({t, c:s.color}); maxlen = Math.max(maxlen, t.length);
+    });
+    const lh=15, px=9, py=7;
+    lines.forEach((ln,i)=>{
+      const ts = document.createElementNS(_NS,"tspan");
+      ts.setAttribute("x",px); ts.setAttribute("dy", i?lh:0);
+      ts.setAttribute("fill",ln.c); ts.setAttribute("font-size","11");
+      ts.textContent = ln.t; ttext.appendChild(ts);
+    });
+    const tw = maxlen*6.7 + px*2, th = lines.length*lh + py*2;
+    let tx = cx+12; if(tx+tw > w-pad.r) tx = cx-12-tw; if(tx < pad.l) tx = pad.l;
+    tip.setAttribute("transform","translate("+tx+","+(pad.t+6)+")");
+    trect.setAttribute("width",tw); trect.setAttribute("height",th);
+    ttext.setAttribute("y",py+11);
+  }
+  svg.addEventListener("mousemove", move);
+  svg.addEventListener("mouseleave", ()=>{ g.style.display="none"; });
+}
+let _lb;
+function openLB(svg){
+  if(!_lb){
+    _lb = document.createElement("div"); _lb.className="lb"; _lb.hidden=true;
+    _lb.innerHTML = '<div class="lb-card"><button class="lb-x" aria-label="close">&#10005;</button><div class="lb-body"></div></div>';
+    document.body.appendChild(_lb);
+    _lb.addEventListener("click", e=>{ if(e.target===_lb || e.target.closest(".lb-x")) _lb.hidden=true; });
+    document.addEventListener("keydown", e=>{ if(e.key==="Escape") _lb.hidden=true; });
+  }
+  const body = _lb.querySelector(".lb-body"); body.innerHTML="";
+  const clone = svg.cloneNode(true);
+  clone.querySelectorAll(".xhair").forEach(n=>n.remove());
+  clone.__wired = false;
+  body.appendChild(clone); wireHover(clone);
+  _lb.hidden = false;
+}
+function addExpand(card){
+  if(card.__exp) return;
+  const svg = card.querySelector("svg[data-meta]"); if(!svg) return;
+  card.__exp = true;
+  const b = document.createElement("button");
+  b.className="exp"; b.type="button"; b.title="Expand"; b.innerHTML="&#10530;";
+  b.addEventListener("click", ()=>openLB(svg));
+  card.appendChild(b);
+}
+function enhanceCharts(){
+  document.querySelectorAll("svg[data-meta]").forEach(wireHover);
+  document.querySelectorAll(".card").forEach(addExpand);
+}
+enhanceCharts();
 
 """
 
