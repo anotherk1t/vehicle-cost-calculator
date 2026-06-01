@@ -12,6 +12,6 @@
     // auth is bypassed).
     "directory": "./public/",
     "binding": "ASSETS",
-    "run_worker_first": true
+    "run_worker_first": false
   }
 }
