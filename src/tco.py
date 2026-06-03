@@ -656,7 +656,20 @@ function holdChart(r){
   return s+`</svg>`;
 }
 
+function updateAgeSlider(){
+  const el = $("age");
+  if(!el) return;
+  const c = curveOf();
+  if(!c.length){ el.min=1; el.max=18; return; }
+  const pts = c.slice().sort((a,b)=>a.age-b.age);
+  const amin = pts[0].age, amax = pts[pts.length-1].age;
+  el.min = amin; el.max = amax;
+  if(state.age < amin){ state.age = amin; el.value = amin; $("ageval").textContent = amin; }
+  if(state.age > amax){ state.age = amax; el.value = amax; $("ageval").textContent = amax; }
+}
+
 function render(){
+  updateAgeSlider();
   const r = compute();
   if(!r.ok){
     $("perkm").innerHTML = "—"; $("yrnum").textContent = "—"; $("bandtxt").textContent = "";
