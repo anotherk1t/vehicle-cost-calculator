@@ -305,18 +305,12 @@ function drawMarkers(){
     }).bindPopup(popupHtml(p)).addTo(_layer);
   });
 }
-let _leafletLoaded = false;
 function initMap(){
-  const mapDiv = document.getElementById("map");
-  if(!mapDiv) return;
-  if(_leafletLoaded){ _startMap(); return; }
-  const js = document.createElement("script");
-  js.src = "/leaflet.min.js";
-  js.onerror = () => { mapDiv.innerHTML = '<p style="color:var(--muted);padding:2rem;font-family:IBM Plex Mono,monospace;font-size:.8rem">Map script failed to load.</p>'; };
-  js.onload = () => { _leafletLoaded = true; _startMap(); };
-  document.head.appendChild(js);
-}
-function _startMap(){
+  if(typeof L === "undefined"){
+    const el = document.getElementById("map");
+    if(el) el.innerHTML = '<p style="color:var(--muted);padding:2rem;font-family:IBM Plex Mono,monospace;font-size:.8rem">Map failed to load.</p>';
+    return;
+  }
   _map = L.map("map", {scrollWheelZoom:false}).setView([54.372,18.62], 11);
   L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
     attribution:'© OpenStreetMap, © CARTO', subdomains:"abcd", maxZoom:18
@@ -532,6 +526,7 @@ def _render_html(budget: dict, invest: dict) -> str:
 """
     return (
         head
+        + '<script src="/leaflet.min.js"></script>\n'
         + "<script>\nconst BUDGET = "
         + cfg
         + ";\nconst INVEST = "
