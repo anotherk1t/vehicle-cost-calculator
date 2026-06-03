@@ -129,11 +129,8 @@ _FONTS = (
     '<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500&'
     'family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">'
 )
-# Leaflet is injected dynamically in initMap() so the browser has fully rendered
-# and laid out the #map container before Leaflet measures it. Loading from <head>
-# can race the .reveal animation (transform:translateY) and give Leaflet zero
-# dimensions, producing a blank map. The integrity hashes are verified against
-# cdn.jsdelivr.net 1.9.4 bytes; crossOrigin is required for SRI to apply.
+# Leaflet files (leaflet.min.js + leaflet.min.css) are bundled in public/ and
+# loaded as same-origin assets — no CDN, no SRI, no cross-origin issues.
 
 _STYLE = """
 :root{
@@ -313,17 +310,9 @@ function initMap(){
   const mapDiv = document.getElementById("map");
   if(!mapDiv) return;
   if(_leafletLoaded){ _startMap(); return; }
-  const css = document.createElement("link");
-  css.rel = "stylesheet";
-  css.href = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css";
-  css.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
-  css.crossOrigin = "";
-  document.head.appendChild(css);
   const js = document.createElement("script");
-  js.src = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js";
-  js.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
-  js.crossOrigin = "";
-  js.onerror = () => { mapDiv.innerHTML = '<p style="color:var(--muted);padding:2rem;font-family:IBM Plex Mono,monospace;font-size:.8rem">Map failed to load — check browser console.</p>'; };
+  js.src = "/leaflet.min.js";
+  js.onerror = () => { mapDiv.innerHTML = '<p style="color:var(--muted);padding:2rem;font-family:IBM Plex Mono,monospace;font-size:.8rem">Map script failed to load.</p>'; };
   js.onload = () => { _leafletLoaded = true; _startMap(); };
   document.head.appendChild(js);
 }
@@ -472,6 +461,7 @@ def _render_html(budget: dict, invest: dict) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gdańsk transport budget · roads vs transit</title>
 {_FONTS}
+<link rel="stylesheet" href="/leaflet.min.css">
 <style>{_STYLE}{ui.SELECTOR_CSS}</style>
 </head>
 <body>

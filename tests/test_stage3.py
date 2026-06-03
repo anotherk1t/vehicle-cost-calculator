@@ -70,8 +70,8 @@ class TestRender:
         assert html.startswith("<!doctype html>")
         # data embedded inline (no fetch at runtime for our own data)
         assert "const BUDGET =" in html and "const INVEST =" in html
-        # interactive Leaflet map wired in
-        assert "leaflet@1.9.4" in html
+        # Leaflet loaded from same-origin bundle
+        assert "leaflet.min.js" in html and "leaflet.min.css" in html
         for mount in ('id="flip"', 'id="run"', 'id="map"', 'id="modeFilter"', 'id="yrSlider"'):
             assert mount in html
         # nav cross-links + active page
