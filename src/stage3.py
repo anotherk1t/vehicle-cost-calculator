@@ -73,7 +73,7 @@ STRINGS = {
         "f_all": "All",
         "f_road": "Roads",
         "f_transit": "Transit",
-        "f_recent": "2018+ only",
+        "f_from": "From",
         "pop_total": "total",
         "pop_city": "city money",
         "pop_ue": "EU funds",
@@ -109,7 +109,7 @@ STRINGS = {
         "f_all": "Wszystko",
         "f_road": "Drogi",
         "f_transit": "Transit",
-        "f_recent": "tylko 2018+",
+        "f_from": "Od",
         "pop_total": "całość",
         "pop_city": "pieniądze miasta",
         "pop_ue": "środki UE",
@@ -132,9 +132,9 @@ _FONTS = (
 # Leaflet from unpkg, pinned with Subresource Integrity so a CDN compromise can't
 # inject script (official 1.9.4 hashes). crossorigin is required for SRI to apply.
 _LEAFLET = (
-    '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" '
+    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" '
     'integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">'
-    '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" '
+    '<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" '
     'integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>'
 )
 
@@ -201,7 +201,9 @@ h2{font-family:"Anton",sans-serif; font-weight:400; text-transform:uppercase; fo
   font:inherit; font-size:.76rem; padding:.42rem .9rem; transition:.15s}
 .mapctl .seg button:hover{color:var(--ink)}
 .mapctl .seg button.on{background:var(--ink); color:#0b0b0f}
-.mapctl .rec{font-family:"IBM Plex Mono",monospace; font-size:.76rem; color:var(--muted); cursor:pointer; user-select:none}
+.mapctl .yrf{display:inline-flex; align-items:center; gap:.55rem; font-family:"IBM Plex Mono",monospace; font-size:.76rem; color:var(--muted)}
+.mapctl .yrf input[type=range]{width:130px; accent-color:var(--road); cursor:pointer}
+.mapctl .yrf b{min-width:2.6rem; color:var(--ink)}
 #map{height:600px; border-radius:16px; border:1px solid var(--line); margin:0; background:#0f141a; z-index:0}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#13181d; color:#eef1f3; border:1px solid #252c33}
 .leaflet-popup-content{font-family:"Newsreader",Georgia,serif; font-size:.86rem; line-height:1.45; margin:.7rem .9rem}
@@ -297,10 +299,11 @@ function popupHtml(p){
 function drawMarkers(){
   if(!_layer) return;
   _layer.clearLayers();
-  const rec = document.getElementById("recOnly").checked;
+  const sl = document.getElementById("yrSlider");
+  const yrFrom = sl ? +sl.value : 0;
   (INVEST.projects||[]).forEach(p=>{
     if(_mode!=="all" && p.mode!==_mode) return;
-    if(rec && p.yr<2018) return;
+    if(p.yr < yrFrom) return;
     const col=MODE_COLOR[p.mode]||"#999";
     L.circleMarker([p.lat,p.lon], {
       radius: Math.max(4, Math.min(34, Math.sqrt(p.tot)*3.3)),
@@ -309,19 +312,37 @@ function drawMarkers(){
   });
 }
 function initMap(){
-  if(typeof L==="undefined") return;
+  if(typeof L==="undefined"){
+    const el=document.getElementById("map");
+    if(el) el.innerHTML='<p style="color:var(--muted);padding:2rem;font-family:IBM Plex Mono,monospace;font-size:.8rem">Map failed to load — check browser console.</p>';
+    return;
+  }
   _map = L.map("map", {scrollWheelZoom:false}).setView([54.372,18.62], 11);
   L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
     attribution:'© OpenStreetMap, © CARTO', subdomains:"abcd", maxZoom:18
   }).addTo(_map);
   _layer = L.layerGroup().addTo(_map);
+  // set slider range from actual data
+  const yrs = (INVEST.projects||[]).map(p=>p.yr).filter(Boolean);
+  if(yrs.length){
+    const ymin=Math.min(...yrs), ymax=Math.max(...yrs);
+    const sl=document.getElementById("yrSlider");
+    sl.min=ymin; sl.max=ymax; sl.value=ymin;
+    document.getElementById("yrVal").textContent=ymin;
+  }
   drawMarkers();
+  // .reveal animation plays for ~700ms — re-tile the map after it settles so
+  // Leaflet can measure the container's real pixel size.
+  setTimeout(()=>_map.invalidateSize(), 750);
   document.querySelectorAll("#modeFilter button").forEach(b=>b.addEventListener("click",()=>{
     _mode=b.dataset.m;
     document.querySelectorAll("#modeFilter button").forEach(x=>x.classList.toggle("on", x===b));
     drawMarkers();
   }));
-  document.getElementById("recOnly").addEventListener("change", drawMarkers);
+  document.getElementById("yrSlider").addEventListener("input", e=>{
+    document.getElementById("yrVal").textContent=e.target.value;
+    drawMarkers();
+  });
 }
 function drawLegend(){
   document.getElementById("mlegend").innerHTML =
@@ -499,7 +520,11 @@ def _render_html(budget: dict, invest: dict) -> str:
       <button data-m="road" data-i18n="f_road">Roads</button>
       <button data-m="transit" data-i18n="f_transit">Transit</button>
     </div>
-    <label class="rec"><input type="checkbox" id="recOnly"> <span data-i18n="f_recent">2018+ only</span></label>
+    <div class="yrf">
+      <span data-i18n="f_from">From</span>
+      <input type="range" id="yrSlider" min="2000" max="2023" step="1" value="2000">
+      <b id="yrVal">2000</b>
+    </div>
   </div>
   <div id="map"></div>
   <div class="legend" id="mlegend"></div>

@@ -72,7 +72,7 @@ class TestRender:
         assert "const BUDGET =" in html and "const INVEST =" in html
         # interactive Leaflet map wired in
         assert "leaflet@1.9.4" in html
-        for mount in ('id="flip"', 'id="run"', 'id="map"', 'id="modeFilter"', 'id="recOnly"'):
+        for mount in ('id="flip"', 'id="run"', 'id="map"', 'id="modeFilter"', 'id="yrSlider"'):
             assert mount in html
         # nav cross-links + active page
         assert 'href="practice.html"' in html and 'class="here"' in html
