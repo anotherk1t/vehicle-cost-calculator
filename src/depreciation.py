@@ -163,7 +163,124 @@ footer{margin-top:3.4rem; padding-top:1.4rem; border-top:1px solid var(--line);
 @media (prefers-reduced-motion:reduce){.reveal{animation:none}}
 """
 
-STRINGS = {'en': {'veh_moto': 'Moto', 'veh_car': 'Car', 'h1': 'How fast a<br>vehicle bleeds value', 'dek_moto': 'Cross-sectional depreciation curves by engine class, read off private-seller listings and smoothed with weighted isotonic regression.', 'dek_car': 'Per-model depreciation curves for the Polish used-car market — value vs age from private-seller listings.', 'nav_cost': 'Personal cost', 'nav_ledger': 'Public-money ledger', 'nav_depr': 'Depreciation curves', 'nav_practice': 'In practice', 'car_eye': 'By model', 'car_h': 'Car depreciation by model', 'car_lede': 'Per-model value-vs-age curves from PL private-seller listings, highest-volume models first. Dots = raw medians, band = P25–P75, line = smoothed fit. Focus on the shape — how steeply each model drops.', 'car_none': 'No car curves yet.'}, 'pl': {'veh_moto': 'Moto', 'veh_car': 'Auto', 'h1': 'Jak szybko<br>pojazd traci wartość', 'dek_moto': 'Przekrojowe krzywe utraty wartości wg klasy silnika, odczytane z ofert prywatnych i wygładzone regresją izotoniczną.', 'dek_car': 'Krzywe utraty wartości per model dla polskiego rynku aut używanych — wartość względem wieku z ofert prywatnych.', 'nav_cost': 'Koszt osobisty', 'nav_ledger': 'Bilans publiczny', 'nav_depr': 'Krzywe wartości', 'nav_practice': 'W praktyce', 'car_eye': 'Wg modelu', 'car_h': 'Utrata wartości aut wg modelu', 'car_lede': 'Krzywe wartość-wiek per model z polskich ofert prywatnych (najczęściej wystawiane modele). Kropki to mediany, pasmo to P25–P75, linia to dopasowanie. Patrz na kształt: ile wartości utrzymuje dany model.', 'car_none': 'Brak krzywych dla aut.'}}
+STRINGS = {
+    "en": {
+        "veh_moto": "Moto",
+        "veh_car": "Car",
+        "h1": "How fast a<br>vehicle bleeds value",
+        "dek_moto": "Cross-sectional depreciation curves by engine class, read off private-seller listings and smoothed with weighted isotonic regression.",
+        "dek_car": "Per-model depreciation curves for the Polish used-car market — value vs age from private-seller listings.",
+        "nav_cost": "Personal cost",
+        "nav_ledger": "Public-money ledger",
+        "nav_depr": "Depreciation curves",
+        "nav_practice": "In practice",
+        "car_eye": "By model",
+        "car_h": "Car depreciation by model",
+        "car_lede": "Per-model value-vs-age curves from PL private-seller listings, highest-volume models first. Dots = raw medians, band = P25–P75, line = smoothed fit. Focus on the shape — how steeply each model drops.",
+        "car_none": "No car curves yet.",
+        "kicker": "Polish used market · reference year",
+        "chip_bikes": "valid bikes",
+        "chip_year": "have model year",
+        "chip_cc": "engine size",
+        "chip_classes": "engine classes",
+        "fig01_eye": "Figure 01",
+        "fig01_h": "Price against age",
+        "fig01_lede": "Faint dots are raw medians per (class, age) cell; the solid line is the monotone isotonic fit. Bigger engines sit higher and shed more value.",
+        "fig02_eye": "Figure 02",
+        "fig02_h": "Value retained",
+        "fig02_lede": "Each class indexed to 100% at its youngest tracked cohort — the lower a line falls, the faster that class loses value.",
+        "read_eye": "The read",
+        "read_h": "Summary & buy timing",
+        "read_lede": '"Buy from" marks the first age where annual value loss drops below 8% of the near-new price — past the cliff the first owner paid.',
+        "note_h": "Where registration data plugs in",
+        "note_li1": "<b>Survivorship.</b> Old bikes still listed are the well-kept survivors; CEPiK de-registrations per cohort give a survival fraction to discount the tail.",
+        "note_li2": "<b>Sample bias.</b> Sellers over-list newer bikes; CEPiK first-registration volumes re-weight the medians toward true cohort sizes.",
+        "cls_eye": "By engine class",
+        "cls_h": "Class breakdowns",
+        "mdl_eye": "By model",
+        "mdl_h": "Model-level curves",
+        "mdl_lede": "The precise tier — depreciation for a single make + model, where there's enough data. Includes dealer listings for coverage, so read the <b>shape</b> (how much value it keeps), not the absolute złoty.",
+        "foot_method": "METHOD · cross-sectional medians, private-seller slice; smoothing = weighted isotonic regression (PAVA) on log-price, computed upstream.",
+        "foot_source": "SOURCE · derived aggregate curves only — no listings reproduced. Registration overlay (CEPiK) planned.",
+        "tbl_class": "class",
+        "tbl_anchor": "anchor PLN",
+        "tbl_kept3": "kept 3y",
+        "tbl_kept5": "kept 5y",
+        "tbl_kept10": "kept 10y",
+        "tbl_buyfrom": "buy from",
+        "tbl_age": "age",
+        "tbl_fit": "fit PLN",
+        "tbl_kept": "kept",
+        "tbl_depryr": "depr/yr",
+        "tbl_medkm": "med km",
+        "tbl_n": "n",
+        "buy_from_x": "buy from ~{x}y",
+        "early_unresolved": "early drop unresolved",
+        "limited_data": "limited data",
+        "not_trustworthy": "curve not yet trustworthy",
+        "held_back": "Held back — too few clean listings to trust a curve yet: {list}.",
+        "no_models_curves": "No per-model curves yet — not enough listings per model.",
+        "limited_badge": "limited",
+    },
+    "pl": {
+        "veh_moto": "Moto",
+        "veh_car": "Auto",
+        "h1": "Jak szybko<br>pojazd traci wartość",
+        "dek_moto": "Przekrojowe krzywe utraty wartości wg klasy silnika, odczytane z ofert prywatnych i wygładzone regresją izotoniczną.",
+        "dek_car": "Krzywe utraty wartości per model dla polskiego rynku aut używanych — wartość względem wieku z ofert prywatnych.",
+        "nav_cost": "Koszt osobisty",
+        "nav_ledger": "Bilans publiczny",
+        "nav_depr": "Krzywe wartości",
+        "nav_practice": "W praktyce",
+        "car_eye": "Wg modelu",
+        "car_h": "Utrata wartości aut wg modelu",
+        "car_lede": "Krzywe wartość-wiek per model z polskich ofert prywatnych (najczęściej wystawiane modele). Kropki to mediany, pasmo to P25–P75, linia to dopasowanie. Patrz na kształt: ile wartości utrzymuje dany model.",
+        "car_none": "Brak krzywych dla aut.",
+        "kicker": "Polski rynek wtórny · rok odniesienia",
+        "chip_bikes": "ważnych pojazdów",
+        "chip_year": "ma rocznik",
+        "chip_cc": "pojemność silnika",
+        "chip_classes": "klas silnika",
+        "fig01_eye": "Rysunek 01",
+        "fig01_h": "Cena względem wieku",
+        "fig01_lede": "Blade kropki to surowe mediany dla komórki (klasa, wiek); ciągła linia to monotoniczne dopasowanie izotoniczne. Większe silniki leżą wyżej i tracą więcej wartości.",
+        "fig02_eye": "Rysunek 02",
+        "fig02_h": "Zachowana wartość",
+        "fig02_lede": "Każda klasa indeksowana do 100% w najmłodszym śledzonym kohorcie — im niżej spada linia, tym szybciej klasa traci wartość.",
+        "read_eye": "Odczyt",
+        "read_h": "Podsumowanie i moment zakupu",
+        "read_lede": '"Kupuj od" oznacza pierwszy wiek, w którym roczna utrata wartości spada poniżej 8% ceny nowości — za klifem, który zapłacił pierwszy właściciel.',
+        "note_h": "Gdzie wpinają się dane rejestracyjne",
+        "note_li1": "<b>Przeżywalność.</b> Stare pojazdy wciąż wystawiane to zadbane sztuki, które przetrwały; wyrejestrowania CEPiK per kohorta dają frakcję przeżycia do dyskontowania ogona rozkładu.",
+        "note_li2": "<b>Błąd próby.</b> Sprzedający częściej wystawiają nowsze pojazdy; wolumeny pierwszych rejestracji CEPiK re-ważą mediany ku prawdziwym rozmiarom kohort.",
+        "cls_eye": "Wg klasy silnika",
+        "cls_h": "Rozbicie na klasy",
+        "mdl_eye": "Wg modelu",
+        "mdl_h": "Krzywe na poziomie modelu",
+        "mdl_lede": "Najdokładniejszy poziom — utrata wartości dla pojedynczej marki i modelu, tam gdzie jest dość danych. Obejmuje oferty dealerów dla pokrycia, więc patrz na <b>kształt</b> (ile wartości utrzymuje), nie bezwzględne złotówki.",
+        "foot_method": "METODA · przekrojowe mediany, wycinek ofert prywatnych; wygładzanie = ważona regresja izotoniczna (PAVA) na log-cenie, liczone u źródła.",
+        "foot_source": "ŹRÓDŁO · tylko pochodne krzywe zbiorcze — żadne ogłoszenia nie są odtwarzane. Nakładka rejestracji (CEPiK) w planach.",
+        "tbl_class": "klasa",
+        "tbl_anchor": "kotwica PLN",
+        "tbl_kept3": "po 3 l.",
+        "tbl_kept5": "po 5 l.",
+        "tbl_kept10": "po 10 l.",
+        "tbl_buyfrom": "kupuj od",
+        "tbl_age": "wiek",
+        "tbl_fit": "dopas. PLN",
+        "tbl_kept": "zach.",
+        "tbl_depryr": "utrata/rok",
+        "tbl_medkm": "med. km",
+        "tbl_n": "n",
+        "buy_from_x": "kupuj od ~{x} l.",
+        "early_unresolved": "wczesny spadek nierozstrzygnięty",
+        "limited_data": "mało danych",
+        "not_trustworthy": "krzywa jeszcze niepewna",
+        "held_back": "Wstrzymane — za mało czystych ofert, by zaufać krzywej: {list}.",
+        "no_models_curves": "Brak krzywych per model — za mało ofert na model.",
+        "limited_badge": "ograniczone",
+    },
+}
 
 # Plain (non-f-string) JS — single braces, no escaping. `AGG` is prepended by
 # the renderer. This draws every chart client-side from the embedded aggregates.
@@ -250,6 +367,10 @@ function legend(list){
   return `<div class="legend">` + list.map(cc=>`<span><i style="background:${HEAT[cc]}"></i>${cc}cc</span>`).join("") + `</div>`;
 }
 
+// Build every chart + data table. Wrapped in a function so a language switch can
+// re-render the tables (their headers/labels are translated) — applyLang only
+// updates static [data-i18n] nodes, not these innerHTML-built tables.
+function renderTables(){
 // Figure 01 — price vs age (trusted classes only)
 const overview = shown.map(cc=>{
   const pts = AGG.classes[cc].points;
@@ -269,7 +390,7 @@ document.querySelector("#retentionLegend").innerHTML = legend(shown);
 // Summary table — trusted classes only
 function retAt(pts, age){ const p = pts.find(p=>p.age===age); return p? Math.round(p.retained_pct)+"%" : "·"; }
 document.querySelector("#summary").innerHTML =
-  `<table><thead><tr><th>class</th><th>anchor PLN</th><th>kept 3y</th><th>kept 5y</th><th>kept 10y</th><th>buy from</th></tr></thead><tbody>`
+  `<table><thead><tr><th>${_t("tbl_class")}</th><th>${_t("tbl_anchor")}</th><th>${_t("tbl_kept3")}</th><th>${_t("tbl_kept5")}</th><th>${_t("tbl_kept10")}</th><th>${_t("tbl_buyfrom")}</th></tr></thead><tbody>`
   + shown.map(cc=>{
       const a = AGG.classes[cc];
       const spot = a.sweet_spot_age!=null ? `<span class="spot">${a.sweet_spot_age}y+</span>` : "·";
@@ -277,8 +398,7 @@ document.querySelector("#summary").innerHTML =
         + `<td>${retAt(a.points,3)}</td><td>${retAt(a.points,5)}</td><td>${retAt(a.points,10)}</td><td>${spot}</td></tr>`;
     }).join("") + `</tbody></table>`
   + (reliable.length < present.length
-      ? `<p class="lowconf">Held back — too few clean listings to trust a curve yet: `
-        + present.filter(cc=>AGG.classes[cc].reliable===false).map(cc=>cc+"cc").join(", ") + `.</p>`
+      ? `<p class="lowconf">` + fmt(_t("held_back"), {list: present.filter(cc=>AGG.classes[cc].reliable===false).map(cc=>cc+"cc").join(", ")}) + `</p>`
       : "");
 
 // Per-class cards — show every class, badge the low-confidence ones
@@ -293,11 +413,11 @@ document.querySelector("#classes").innerHTML = present.map((cc,i)=>{
     const km = p.median_km ? p.median_km.toLocaleString("pl-PL") : "·";
     return `<tr><td>${p.age}y</td><td>${p.smooth.toLocaleString("pl-PL")}</td><td>${Math.round(p.retained_pct)}%</td><td>${depr}</td><td>${km}</td><td>${p.n}</td></tr>`;
   }).join("");
-  const spot = a.sweet_spot_age!=null ? `buy from ~${a.sweet_spot_age}y` : "early drop unresolved";
-  const badge = low ? `<span class="lowbadge">limited data</span>` : "";
+  const spot = a.sweet_spot_age!=null ? fmt(_t("buy_from_x"), {x:a.sweet_spot_age}) : _t("early_unresolved");
+  const badge = low ? `<span class="lowbadge">${_t("limited_data")}</span>` : "";
   return `<div class="card cls reveal${low?' low':''}" style="--accent:${HEAT[cc]}; animation-delay:${(0.05*i).toFixed(2)}s">
-    <h3>${cc}cc ${badge}</h3><p class="sub">anchor ${a.anchor.toLocaleString("pl-PL")} PLN · ${spot}${low?' · curve not yet trustworthy':''}</p>${mini}
-    <div style="overflow-x:auto"><table><thead><tr><th>age</th><th>fit PLN</th><th>kept</th><th>depr/yr</th><th>med km</th><th>n</th></tr></thead><tbody>${rows}</tbody></table></div>
+    <h3>${cc}cc ${badge}</h3><p class="sub">anchor ${a.anchor.toLocaleString("pl-PL")} PLN · ${spot}${low?' · '+_t("not_trustworthy"):''}</p>${mini}
+    <div style="overflow-x:auto"><table><thead><tr><th>${_t("tbl_age")}</th><th>${_t("tbl_fit")}</th><th>${_t("tbl_kept")}</th><th>${_t("tbl_depryr")}</th><th>${_t("tbl_medkm")}</th><th>${_t("tbl_n")}</th></tr></thead><tbody>${rows}</tbody></table></div>
   </div>`;
 }).join("");
 
@@ -309,7 +429,7 @@ document.querySelector("#classes").innerHTML = present.map((cc,i)=>{
   const entries = Object.entries(AGG.models||{})
     .filter(([n,m]) => m.points && m.points.length)
     .sort((a,b) => (b[1].n_samples||0)-(a[1].n_samples||0));
-  if(!entries.length){ host.innerHTML = `<p class="lede">No per-model curves yet — not enough listings per model.</p>`; return; }
+  if(!entries.length){ host.innerHTML = `<p class="lede">${_t("no_models_curves")}</p>`; return; }
   const k5 = pts => { const p = pts.find(p=>p.age===5); return p ? Math.round(p.retained_pct)+"%" : "·"; };
   host.innerHTML = entries.map(([name,a],i)=>{
     const pts=a.points, low=a.reliable===false;
@@ -317,7 +437,7 @@ document.querySelector("#classes").innerHTML = present.map((cc,i)=>{
       band: pts.map(p=>[p.age,p.p25,p.p75]),
       dots: pts.map(p=>[p.age,p.median]),
       line: pts.map(p=>[p.age,p.smooth])}], {h:240});
-    const badge = low ? `<span class="lowbadge">limited</span>` : "";
+    const badge = low ? `<span class="lowbadge">${_t("limited_badge")}</span>` : "";
     return `<div class="card cls reveal${low?' low':''}" style="--accent:${VIO}; animation-delay:${(0.03*i).toFixed(2)}s">
       <h3 style="font-size:1.15rem">${name} ${badge}</h3>
       <p class="sub">${a.category||"—"} · anchor ${a.anchor.toLocaleString("pl-PL")} PLN · kept 5y ${k5(pts)} · n=${a.n_samples}</p>${mini}
@@ -341,6 +461,9 @@ document.querySelector("#classes").innerHTML = present.map((cc,i)=>{
     return `<div class="card cls reveal" style="--accent:${VIO}; animation-delay:${(0.02*i).toFixed(2)}s"><h3 style="font-size:1.1rem">${tc(name)}</h3><p class="sub">${a.fuel||"—"} · anchor ${a.anchor.toLocaleString("pl-PL")} PLN · kept 5y ${k5(pts)} · n=${a.n_samples}</p>${mini}</div>`;
   }).join("") : `<p class="lede">${_t("car_none")||"No car curves yet."}</p>`;
 })();
+}  // end renderTables
+renderTables();
+
 function applyVeh(){
   const car = (typeof UI!=="undefined") && UI.veh==="car";
   const mo = document.querySelector("#motoSecs"), ca = document.querySelector("#carSecs");
@@ -349,7 +472,10 @@ function applyVeh(){
   const dek = document.querySelector("#dek");
   if(dek) dek.innerHTML = (_t(car?"dek_car":"dek_moto")) || dek.innerHTML;
 }
-window.addEventListener("uichange", applyVeh);
+// On a language or vehicle switch, re-render the translated tables, re-apply the
+// vehicle view, and re-wire the chart hover/expand on the fresh nodes.
+function onUiChange(){ renderTables(); applyVeh(); enhanceCharts(); }
+window.addEventListener("uichange", onUiChange);
 applyVeh();
 
 // --- chart interactivity: hover crosshair + value readout, expand-to-lightbox ---
@@ -486,29 +612,29 @@ def _render_html(agg: dict, car_agg: dict | None = None) -> str:
 <div class="wrap">
 <header class="reveal">
   {ui.selector_bar()}
-  <p class="kicker">Polish used market · reference year {year}</p>
+  <p class="kicker"><span data-i18n="kicker">Polish used market · reference year</span> {year}</p>
   <h1 data-i18n-html="h1">How fast a<br>vehicle bleeds value</h1>
   <p class="dek" id="dek" data-i18n="dek_moto">Cross-sectional depreciation curves by engine class, read off
   private-seller listings and smoothed with weighted isotonic regression.</p>
   <div class="redline"></div>
   <div class="chips">
-    <div class="chip"><b>{cov.get("n_total", 0):,}</b><span>valid bikes</span></div>
-    <div class="chip"><b>{cov.get("pct_year", 0):.0f}%</b><span>have model year</span></div>
-    <div class="chip"><b>{cov.get("pct_cc", 0):.0f}%</b><span>engine size</span></div>
-    <div class="chip" id="nclasses"><b>—</b><span>engine classes</span></div>
+    <div class="chip"><b>{cov.get("n_total", 0):,}</b><span data-i18n="chip_bikes">valid bikes</span></div>
+    <div class="chip"><b>{cov.get("pct_year", 0):.0f}%</b><span data-i18n="chip_year">have model year</span></div>
+    <div class="chip"><b>{cov.get("pct_cc", 0):.0f}%</b><span data-i18n="chip_cc">engine size</span></div>
+    <div class="chip" id="nclasses"><b>—</b><span data-i18n="chip_classes">engine classes</span></div>
   </div>
   {sample_banner}
   <nav class="nav">
-    <a href="cost.html" data-i18n="nav_cost">Personal cost</a>
-    <a href="index.html" data-i18n="nav_ledger">Public-money ledger</a>
+    <a href="index.html" data-i18n="nav_cost">Personal cost</a>
+    <a href="ledger.html" data-i18n="nav_ledger">Public-money ledger</a>
     <a href="depreciation.html" class="here" data-i18n="nav_depr">Depreciation curves</a>
     <a href="practice.html" data-i18n="nav_practice">In practice</a>
   </nav>
 </header>
 {body}
 <footer>
-  <div>METHOD · cross-sectional medians, private-seller slice; smoothing = weighted isotonic regression (PAVA) on log-price, computed upstream.</div>
-  <div>SOURCE · derived aggregate curves only — no listings reproduced. Registration overlay (CEPiK) planned.</div>
+  <div data-i18n="foot_method">METHOD · cross-sectional medians, private-seller slice; smoothing = weighted isotonic regression (PAVA) on log-price, computed upstream.</div>
+  <div data-i18n="foot_source">SOURCE · derived aggregate curves only — no listings reproduced. Registration overlay (CEPiK) planned.</div>
 </footer>
 </div>
 """
@@ -516,9 +642,17 @@ def _render_html(agg: dict, car_agg: dict | None = None) -> str:
         return head + "</body>\n</html>\n"
     return (
         head
-        + "<script>\nconst AGG = " + config + ";\nconst AGG_CAR = " + car_config
-        + ";\nwindow.T = " + json.dumps(STRINGS, ensure_ascii=False) + ";\n"
-        + ui.SELECTOR_JS + "\n" + _JS + "</script>\n</body>\n</html>\n"
+        + "<script>\nconst AGG = "
+        + config
+        + ";\nconst AGG_CAR = "
+        + car_config
+        + ";\nwindow.T = "
+        + json.dumps(STRINGS, ensure_ascii=False)
+        + ";\n"
+        + ui.SELECTOR_JS
+        + "\n"
+        + _JS
+        + "</script>\n</body>\n</html>\n"
     )
 
 
@@ -526,48 +660,48 @@ def _data_sections() -> str:
     return """
 <div id="motoSecs">
 <section class="reveal" style="animation-delay:.08s">
-  <p class="eyebrow">Figure 01</p>
-  <h2>Price against age</h2>
-  <p class="lede">Faint dots are raw medians per (class, age) cell; the solid line
+  <p class="eyebrow" data-i18n="fig01_eye">Figure 01</p>
+  <h2 data-i18n="fig01_h">Price against age</h2>
+  <p class="lede" data-i18n="fig01_lede">Faint dots are raw medians per (class, age) cell; the solid line
   is the monotone isotonic fit. Bigger engines sit higher and shed more value.</p>
   <div class="card"><div id="overview"></div><div id="overviewLegend"></div></div>
 </section>
 
 <section class="reveal" style="animation-delay:.12s">
-  <p class="eyebrow">Figure 02</p>
-  <h2>Value retained</h2>
-  <p class="lede">Each class indexed to 100% at its youngest tracked cohort — the
+  <p class="eyebrow" data-i18n="fig02_eye">Figure 02</p>
+  <h2 data-i18n="fig02_h">Value retained</h2>
+  <p class="lede" data-i18n="fig02_lede">Each class indexed to 100% at its youngest tracked cohort — the
   lower a line falls, the faster that class loses value.</p>
   <div class="card"><div id="retention"></div><div id="retentionLegend"></div></div>
 </section>
 
 <section class="reveal" style="animation-delay:.16s">
-  <p class="eyebrow">The read</p>
-  <h2>Summary &amp; buy timing</h2>
-  <p class="lede">"Buy from" marks the first age where annual value loss drops below
+  <p class="eyebrow" data-i18n="read_eye">The read</p>
+  <h2 data-i18n="read_h">Summary &amp; buy timing</h2>
+  <p class="lede" data-i18n="read_lede">"Buy from" marks the first age where annual value loss drops below
   8% of the near-new price — past the cliff the first owner paid.</p>
   <div class="card"><div id="summary"></div></div>
   <div class="note">
-    <h2>Where registration data plugs in</h2>
+    <h2 data-i18n="note_h">Where registration data plugs in</h2>
     <ul>
-      <li><b>Survivorship.</b> Old bikes still listed are the well-kept survivors;
+      <li data-i18n-html="note_li1"><b>Survivorship.</b> Old bikes still listed are the well-kept survivors;
       CEPiK de-registrations per cohort give a survival fraction to discount the tail.</li>
-      <li><b>Sample bias.</b> Sellers over-list newer bikes; CEPiK first-registration
+      <li data-i18n-html="note_li2"><b>Sample bias.</b> Sellers over-list newer bikes; CEPiK first-registration
       volumes re-weight the medians toward true cohort sizes.</li>
     </ul>
   </div>
 </section>
 
 <section class="reveal">
-  <p class="eyebrow">By engine class</p>
-  <h2>Class breakdowns</h2>
+  <p class="eyebrow" data-i18n="cls_eye">By engine class</p>
+  <h2 data-i18n="cls_h">Class breakdowns</h2>
   <div class="grid" id="classes"></div>
 </section>
 
 <section class="reveal">
-  <p class="eyebrow">By model</p>
-  <h2>Model-level curves</h2>
-  <p class="lede">The precise tier — depreciation for a single make + model, where there's
+  <p class="eyebrow" data-i18n="mdl_eye">By model</p>
+  <h2 data-i18n="mdl_h">Model-level curves</h2>
+  <p class="lede" data-i18n-html="mdl_lede">The precise tier — depreciation for a single make + model, where there's
   enough data. Includes dealer listings for coverage, so read the <b>shape</b> (how much
   value it keeps), not the absolute złoty.</p>
   <div class="grid" id="models"></div>

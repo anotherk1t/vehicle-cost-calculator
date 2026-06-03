@@ -51,21 +51,35 @@ STRINGS = {
         "kicker": "Gdańsk · public transport budget · 2004–2024",
         "h1": "Where the city's<br>mobility money goes",
         "dek": "Gdańsk's own transport budget, pulled from GUS public finance data. The split between road builders and transit passengers, in złoty per resident.",
-        "nav_cost": "Personal cost", "nav_ledger": "Public-money ledger",
-        "nav_depr": "Depreciation curves", "nav_practice": "In practice",
-        "flip_eye": "The flip", "flip_h": "Roads vs transit, per resident",
+        "nav_cost": "Personal cost",
+        "nav_ledger": "Public-money ledger",
+        "nav_depr": "Depreciation curves",
+        "nav_practice": "In practice",
+        "flip_eye": "The flip",
+        "flip_h": "Roads vs transit, per resident",
         "flip_lede": "Road chapters enter the data in 2012. Since then the split inverted — roads slid from most of the transport budget to a quarter of it, while transit + rail climbed. Złoty per resident.",
-        "flip_roads": "Roads (build + maintain)", "flip_transit": "Transit + rail",
+        "flip_roads": "Roads (build + maintain)",
+        "flip_transit": "Transit + rail",
         "flip_share": "roads = {v}% of transport spend",
-        "run_eye": "Build vs run", "run_h": "Most of it just runs the system",
+        "run_eye": "Build vs run",
+        "run_h": "Most of it just runs the system",
         "run_lede": "The same budget, split by economic type. Capital = building; current = operating + maintenance, where road repairs like Al. Rzeczypospolitej sit. Current now dwarfs capital — the city mostly runs and patches what exists.",
-        "run_current": "Current (run + repair)", "run_capital": "Capital (build)",
-        "map_eye": "On the ground", "map_h": "What the capital actually built, and where",
+        "run_current": "Current (run + repair)",
+        "run_capital": "Capital (build)",
+        "map_eye": "On the ground",
+        "map_h": "What the capital actually built, and where",
         "map_lede": "Every road and public-transit investment from the city's own investment map, dropped where it was built. Circle size = total cost; colour = roads vs transit. Click a circle for the cost and how much was city money vs EU. The road megaprojects cluster on the port/airport axis (2012–16); the tram + PKM build-out sits in the southern districts (2008–15).",
         "map_note": "Source · Gdańska Mapa Inwestycji (gdansk.pl). Circle area ∝ total cost. Drag to pan, double-click to zoom.",
-        "f_all": "All", "f_road": "Roads", "f_transit": "Transit", "f_recent": "2018+ only",
-        "pop_total": "total", "pop_city": "city money", "pop_ue": "EU funds", "pop_mln": "mln zł",
-        "leg_road": "Roads / car", "leg_transit": "Public transit",
+        "f_all": "All",
+        "f_road": "Roads",
+        "f_transit": "Transit",
+        "f_recent": "2018+ only",
+        "pop_total": "total",
+        "pop_city": "city money",
+        "pop_ue": "EU funds",
+        "pop_mln": "mln zł",
+        "leg_road": "Roads / car",
+        "leg_transit": "Public transit",
         "axis_zl_cap": "zł / resident",
         "src": "Sources · GUS Bank Danych Lokalnych, dział 600 (budget series) + Gdańska Mapa Inwestycji (project locations & costs). Derived totals only — no marketplace data.",
     },
@@ -73,34 +87,55 @@ STRINGS = {
         "kicker": "Gdańsk · budżet transportu · 2004–2024",
         "h1": "Dokąd płynie miejski<br>budżet na transport",
         "dek": "To nie polemika — to budżet transportowy Gdańska, odczytany z danych GUS o finansach publicznych. Kto dostaje pieniądze: budowniczowie dróg czy pasażerowie tramwajów i kolei?",
-        "nav_cost": "Koszt osobisty", "nav_ledger": "Bilans publiczny",
-        "nav_depr": "Krzywe wartości", "nav_practice": "W praktyce",
-        "flip_eye": "Odwrócenie", "flip_h": "Drogi kontra transit, na mieszkańca",
+        "nav_cost": "Koszt osobisty",
+        "nav_ledger": "Bilans publiczny",
+        "nav_depr": "Krzywe wartości",
+        "nav_practice": "W praktyce",
+        "flip_eye": "Odwrócenie",
+        "flip_h": "Drogi kontra transit, na mieszkańca",
         "flip_lede": "Rozdziały drogowe wchodzą do danych w 2012. Od tego czasu proporcje się odwróciły — drogi spadły z większości budżetu transportu do ćwierci, a transit + kolej wzrosły. Złote na mieszkańca.",
-        "flip_roads": "Drogi (budowa + utrzymanie)", "flip_transit": "Transit + kolej",
+        "flip_roads": "Drogi (budowa + utrzymanie)",
+        "flip_transit": "Transit + kolej",
         "flip_share": "drogi = {v}% wydatków na transport",
-        "run_eye": "Budowa kontra utrzymanie", "run_h": "Większość to samo utrzymanie",
+        "run_eye": "Budowa kontra utrzymanie",
+        "run_h": "Większość to samo utrzymanie",
         "run_lede": "Ten sam budżet wg rodzaju. Majątkowe = budowa; bieżące = utrzymanie + eksploatacja, tu mieszczą się remonty dróg jak al. Rzeczypospolitej. Bieżące dziś znacznie przewyższają majątkowe — miasto głównie utrzymuje i łata to, co jest.",
-        "run_current": "Bieżące (utrzymanie)", "run_capital": "Majątkowe (budowa)",
-        "map_eye": "W terenie", "map_h": "Co i gdzie zbudowano",
+        "run_current": "Bieżące (utrzymanie)",
+        "run_capital": "Majątkowe (budowa)",
+        "map_eye": "W terenie",
+        "map_h": "Co i gdzie zbudowano",
         "map_lede": "Każda inwestycja drogowa i transportu zbiorowego z miejskiej mapy inwestycji, naniesiona tam, gdzie powstała. Wielkość koła = koszt całkowity; kolor = drogi czy transit. Kliknij koło, by zobaczyć koszt i ile to pieniądze miasta, a ile z UE. Drogowe megainwestycje skupiają się na osi port–lotnisko (2012–16); tramwaje i PKM — na południu (2008–15).",
         "map_note": "Źródło · Gdańska Mapa Inwestycji (gdansk.pl). Pole koła ∝ koszt. Przeciągnij, dwuklik przybliża.",
-        "f_all": "Wszystko", "f_road": "Drogi", "f_transit": "Transit", "f_recent": "tylko 2018+",
-        "pop_total": "całość", "pop_city": "pieniądze miasta", "pop_ue": "środki UE", "pop_mln": "mln zł",
-        "leg_road": "Drogi / auto", "leg_transit": "Transport zbiorowy",
+        "f_all": "Wszystko",
+        "f_road": "Drogi",
+        "f_transit": "Transit",
+        "f_recent": "tylko 2018+",
+        "pop_total": "całość",
+        "pop_city": "pieniądze miasta",
+        "pop_ue": "środki UE",
+        "pop_mln": "mln zł",
+        "leg_road": "Drogi / auto",
+        "leg_transit": "Transport zbiorowy",
         "axis_zl_cap": "zł / mieszkańca",
         "src": "Źródła · GUS Bank Danych Lokalnych, dział 600 (szereg budżetowy) + Gdańska Mapa Inwestycji (lokalizacje i koszty). Tylko zagregowane sumy — bez danych z ogłoszeń.",
     },
 }
 
+# Same type system as the other three surfaces (Anton display + Newsreader body +
+# IBM Plex Mono) so "In practice" reads as one site, not a sibling.
 _FONTS = (
     '<link rel="preconnect" href="https://fonts.googleapis.com">'
     '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>'
-    '<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Spline+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">'
+    '<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500&'
+    'family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">'
 )
+# Leaflet from unpkg, pinned with Subresource Integrity so a CDN compromise can't
+# inject script (official 1.9.4 hashes). crossorigin is required for SRI to apply.
 _LEAFLET = (
-    '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">'
-    '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>'
+    '<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" '
+    'integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">'
+    '<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" '
+    'integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>'
 )
 
 _STYLE = """
@@ -113,13 +148,13 @@ html{scroll-behavior:smooth}
 body{margin:0; background:
   radial-gradient(120% 80% at 80% -10%, #16202b 0%, transparent 55%),
   radial-gradient(90% 60% at -10% 10%, #15211a 0%, transparent 50%), var(--bg);
-  color:var(--ink); font-family:"Spline Sans",system-ui,sans-serif; line-height:1.55;
+  color:var(--ink); font-family:"Newsreader",Georgia,serif; font-size:17px; line-height:1.55;
   -webkit-font-smoothing:antialiased}
 .wrap{max-width:1060px; margin:0 auto; padding:2rem 1.4rem 5rem}
 .kicker{font-family:"IBM Plex Mono",monospace; font-size:.74rem; letter-spacing:.18em;
   text-transform:uppercase; color:var(--muted)}
-h1{font-family:"Archivo Black",sans-serif; font-weight:400; font-size:clamp(2.3rem,6vw,4rem);
-  line-height:.98; letter-spacing:-.02em; margin:.5rem 0 .8rem}
+h1{font-family:"Anton",Impact,sans-serif; font-weight:400; text-transform:uppercase;
+  font-size:clamp(2.4rem,6.5vw,4.4rem); line-height:.92; letter-spacing:.01em; margin:.5rem 0 .8rem}
 .dek{font-size:1.06rem; color:#c7ced6; max-width:62ch; margin:0}
 .redline{height:4px; width:84px; margin:1.5rem 0; border-radius:2px;
   background:linear-gradient(90deg,var(--road),var(--transit))}
@@ -130,8 +165,8 @@ h1{font-family:"Archivo Black",sans-serif; font-weight:400; font-size:clamp(2.3r
 section{margin-top:3.4rem}
 .eyebrow{font-family:"IBM Plex Mono",monospace; font-size:.72rem; letter-spacing:.16em;
   text-transform:uppercase; color:var(--road)}
-h2{font-family:"Archivo Black",sans-serif; font-weight:400; font-size:clamp(1.5rem,3.4vw,2.1rem);
-  letter-spacing:-.01em; margin:.3rem 0 .5rem}
+h2{font-family:"Anton",sans-serif; font-weight:400; text-transform:uppercase; font-size:clamp(1.5rem,3.4vw,2.1rem);
+  letter-spacing:.02em; margin:.3rem 0 .5rem}
 .lede{color:#bac2cb; max-width:64ch; margin:0 0 1.3rem}
 .card{position:relative; background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:1.2rem 1.3rem}
 .exp{position:absolute; top:.7rem; right:.7rem; z-index:3; appearance:none; cursor:pointer;
@@ -169,7 +204,7 @@ h2{font-family:"Archivo Black",sans-serif; font-weight:400; font-size:clamp(1.5r
 .mapctl .rec{font-family:"IBM Plex Mono",monospace; font-size:.76rem; color:var(--muted); cursor:pointer; user-select:none}
 #map{height:600px; border-radius:16px; border:1px solid var(--line); margin:0; background:#0f141a; z-index:0}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#13181d; color:#eef1f3; border:1px solid #252c33}
-.leaflet-popup-content{font-family:"Spline Sans",sans-serif; font-size:.84rem; line-height:1.45; margin:.7rem .9rem}
+.leaflet-popup-content{font-family:"Newsreader",Georgia,serif; font-size:.86rem; line-height:1.45; margin:.7rem .9rem}
 .leaflet-popup-content b{font-size:.9rem}
 .leaflet-container a.leaflet-popup-close-button{color:#8b97a6}
 .leaflet-bar a{background:#13181d; color:#eef1f3; border-bottom-color:#252c33}
@@ -421,8 +456,8 @@ def _render_html(budget: dict, invest: dict) -> str:
   <p class="dek" data-i18n="dek">Gdańsk's own transport budget, pulled from GUS public finance data.</p>
   <div class="redline"></div>
   <nav class="nav">
-    <a href="cost.html" data-i18n="nav_cost">Personal cost</a>
-    <a href="index.html" data-i18n="nav_ledger">Public-money ledger</a>
+    <a href="index.html" data-i18n="nav_cost">Personal cost</a>
+    <a href="ledger.html" data-i18n="nav_ledger">Public-money ledger</a>
     <a href="depreciation.html" data-i18n="nav_depr">Depreciation curves</a>
     <a href="practice.html" class="here" data-i18n="nav_practice">In practice</a>
   </nav>
@@ -476,14 +511,29 @@ def _render_html(budget: dict, invest: dict) -> str:
 """
     return (
         head
-        + "<script>\nconst BUDGET = " + cfg + ";\nconst INVEST = " + inv
-        + ";\nconst MODE_COLOR = " + colors + ";\nwindow.T = " + strings + ";\n"
-        + ui.SELECTOR_JS + "\n" + _JS + "</script>\n</body>\n</html>\n"
+        + "<script>\nconst BUDGET = "
+        + cfg
+        + ";\nconst INVEST = "
+        + inv
+        + ";\nconst MODE_COLOR = "
+        + colors
+        + ";\nwindow.T = "
+        + strings
+        + ";\n"
+        + ui.SELECTOR_JS
+        + "\n"
+        + _JS
+        + "</script>\n</body>\n</html>\n"
     )
 
 
-def render_stage3(*, budget_path: str = DEFAULT_BUDGET, invest_path: str = DEFAULT_INVEST,
-                  output_dir: str = "public", filename: str = "practice.html") -> str:
+def render_stage3(
+    *,
+    budget_path: str = DEFAULT_BUDGET,
+    invest_path: str = DEFAULT_INVEST,
+    output_dir: str = "public",
+    filename: str = "practice.html",
+) -> str:
     with open(budget_path, encoding="utf-8") as f:
         budget = json.load(f)
     invest = {"projects": []}

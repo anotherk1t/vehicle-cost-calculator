@@ -37,9 +37,9 @@ from __future__ import annotations
 import json
 import logging
 import os
+from datetime import UTC, datetime
 
 from src import ui
-from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
 
@@ -447,38 +447,116 @@ footer{margin-top:3.4rem; padding-top:1.4rem; border-top:1px solid var(--line);
 
 STRINGS: dict[str, dict[str, str]] = {
     "en": {
-        "veh_moto": "Moto", "veh_car": "Car",
+        "veh_moto": "Moto",
+        "veh_car": "Car",
         "h1": "Who pays<br>for your ride?",
         "dek": "Every kilometre you drive, you hand the state some tax and impose some cost on everyone else. The two rarely match — this shows how much of your road use you actually cover.",
-        "nav_cost": "Personal cost", "nav_ledger": "Public-money ledger", "nav_depr": "Depreciation curves",
+        "nav_cost": "Personal cost",
+        "nav_ledger": "Public-money ledger",
+        "nav_depr": "Depreciation curves",
         "nav_practice": "In practice",
-        "lbl_vehicle": "Vehicle", "lbl_km": "Distance per year", "km_year": "km / year",
-        "lbl_congestion": "Where you drive (congestion)", "assumptions": "Assumptions — adjust the model",
+        "lbl_vehicle": "Vehicle",
+        "lbl_km": "Distance per year",
+        "km_year": "km / year",
+        "lbl_congestion": "Where you drive (congestion)",
+        "assumptions": "Assumptions — adjust the model",
         "verdict_head": "The verdict — share of your road footprint you pay for",
-        "credit_h": "What you pay the state", "debit_h": "What you cost society",
-        "ext_accidents": "Crashes", "ext_congestion": "Congestion", "ext_climate": "Climate (CO₂)",
-        "ext_air": "Air pollution", "ext_noise": "Noise", "ext_wtt": "Energy supply", "ext_habitat": "Land & habitat",
-        "cr_fuel": "Fuel tax", "cr_reg": "Registration & przegląd", "cr_sub": "Purchase subsidy (amortised)",
+        "credit_h": "What you pay the state",
+        "debit_h": "What you cost society",
+        "ext_accidents": "Crashes",
+        "ext_congestion": "Congestion",
+        "ext_climate": "Climate (CO₂)",
+        "ext_air": "Air pollution",
+        "ext_noise": "Noise",
+        "ext_wtt": "Energy supply",
+        "ext_habitat": "Land & habitat",
+        "cr_fuel": "Fuel tax",
+        "cr_reg": "Registration & przegląd",
+        "cr_sub": "Purchase subsidy (amortised)",
         "say_none": "No measurable footprint.",
         "say_recipient": "The state spends more <b>on</b> you than you cost it — a net <b>recipient</b> of public money, while your footprint stays {ext}/yr.",
         "say_cover": "You cover <b>{cov}%</b> of the <b>{ext}/yr</b> you cost everyone else. The public covers the remaining <b>{net}/yr</b> across {km} km.",
+        "per_year": "Per year",
+        "per_yr": "/yr",
+        "scale_pay": "you pay",
+        "scale_cover": "everyone else covers",
+        "adv_eur": "EUR → PLN rate",
+        "adv_subsidy": "EV purchase subsidy (PLN)",
+        "adv_crash": "Scooter crash estimate",
+        "crash_mid": "Mid (PL-scaled)",
+        "crash_low": "Low · death-rate floor",
+        "crash_high": "High · EU blended",
+        "adv_vat": "count fuel VAT",
+        "adv_vat_hint": "Off = fuel-specific taxes only",
+        "twist_eye": "The twist",
+        "twist_h": "Going electric covers <em>less</em>, not more",
+        "twist_lede": "Switch to <b>electric</b>. The cost side barely moves — crashes and congestion are most of it, and an EV imposes both. The payment side collapses: almost no fuel tax, plus a purchase grant. So the public ends up covering a <em>bigger</em> share of an EV's footprint than a petrol car's. That's a deliberate decarbonisation subsidy, not a free lunch — worth knowing.",
+        "read_h": "How to read this",
+        "read_li1": "<b>Per kilometre, solo.</b> Costs are the handbook's per-passenger-km figures treated as per-km for a single rider — your real footprint if you drive alone. Carpooling lowers the per-person cost.",
+        "read_li2": "<b>Congestion is a band, never a point.</b> It's the most place- and time-specific cost; the selector swings it from open road to rush-hour core. Two-wheelers filter traffic, so theirs stays zero — which is where a scooter quietly wins a dense city.",
+        "read_li3": "<b>A scooter isn't a free angel.</b> It still carries real crash cost — though most of that risk falls on the rider, and much of the rest comes from car drivers.",
+        "read_li4": "<b>This is a model to argue with.</b> Every rate above is editable.",
+        "flag_note": "Poland's temporary fuel VAT/akcyza reduction is scheduled to lapse 31 May 2026 — fuel-tax figures here use the standard rates.",
+        "foot_method": "METHOD · external costs: EC/CE Delft Handbook on the external costs of transport 2019 (EU-28, 2016 €), per-km, solo occupancy. Congestion scaled by a city band.",
+        "foot_contrib": "CONTRIBUTION · PL 2026 akcyza + opłata paliwowa + (optional) fuel VAT + recurring registration; EV purchase grant amortised over 8 years.",
+        "foot_scooter": "SCOOTER SPLIT · KGP/ITS PL crash data (moped vs motorcycle severity) rescales the blended PTW crash term. Coverage % personalises the EU-28 ~48% figure (Transport taxes & charges in Europe 2019).",
+        "foot_nodata": "No marketplace data used · public coefficients only.",
     },
     "pl": {
-        "veh_moto": "Moto", "veh_car": "Auto",
+        "veh_moto": "Moto",
+        "veh_car": "Auto",
         "h1": "Kto płaci<br>za Twoją jazdę?",
         "dek": "Za każdy przejechany kilometr płacisz państwu podatek i nakładasz koszt na resztę. To zestawia jedno z drugim — i pokazuje, jaką część własnego śladu faktycznie pokrywasz.",
-        "nav_cost": "Koszt osobisty", "nav_ledger": "Bilans publiczny", "nav_depr": "Krzywe wartości",
+        "nav_cost": "Koszt osobisty",
+        "nav_ledger": "Bilans publiczny",
+        "nav_depr": "Krzywe wartości",
         "nav_practice": "W praktyce",
-        "lbl_vehicle": "Pojazd", "lbl_km": "Dystans rocznie", "km_year": "km / rok",
-        "lbl_congestion": "Gdzie jeździsz (zatłoczenie)", "assumptions": "Założenia — dostosuj model",
+        "lbl_vehicle": "Pojazd",
+        "lbl_km": "Dystans rocznie",
+        "km_year": "km / rok",
+        "lbl_congestion": "Gdzie jeździsz (zatłoczenie)",
+        "assumptions": "Założenia — dostosuj model",
         "verdict_head": "Werdykt — jaką część swojego śladu drogowego pokrywasz",
-        "credit_h": "Ile płacisz państwu", "debit_h": "Ile kosztujesz społeczeństwo",
-        "ext_accidents": "Wypadki", "ext_congestion": "Zatłoczenie", "ext_climate": "Klimat (CO₂)",
-        "ext_air": "Zanieczyszczenie powietrza", "ext_noise": "Hałas", "ext_wtt": "Dostawa energii", "ext_habitat": "Ziemia i środowisko",
-        "cr_fuel": "Podatek paliwowy", "cr_reg": "Rejestracja i przegląd", "cr_sub": "Dopłata do zakupu (amortyzowana)",
+        "credit_h": "Ile płacisz państwu",
+        "debit_h": "Ile kosztujesz społeczeństwo",
+        "ext_accidents": "Wypadki",
+        "ext_congestion": "Zatłoczenie",
+        "ext_climate": "Klimat (CO₂)",
+        "ext_air": "Zanieczyszczenie powietrza",
+        "ext_noise": "Hałas",
+        "ext_wtt": "Dostawa energii",
+        "ext_habitat": "Ziemia i środowisko",
+        "cr_fuel": "Podatek paliwowy",
+        "cr_reg": "Rejestracja i przegląd",
+        "cr_sub": "Dopłata do zakupu (amortyzowana)",
         "say_none": "Brak mierzalnego śladu.",
         "say_recipient": "Państwo wydaje na Ciebie więcej niż Ty kosztujesz — jesteś netto <b>beneficjentem</b> publicznych pieniędzy, a Twój ślad to {ext}/rok.",
         "say_cover": "Pokrywasz <b>{cov}%</b> z <b>{ext}/rok</b>, które kosztujesz innych. Pozostałe <b>{net}/rok</b> ponosi ogół na {km} km.",
+        "per_year": "Rocznie",
+        "per_yr": "/rok",
+        "scale_pay": "płacisz",
+        "scale_cover": "resztę pokrywa ogół",
+        "adv_eur": "Kurs EUR → PLN",
+        "adv_subsidy": "Dopłata do zakupu EV (PLN)",
+        "adv_crash": "Szacunek wypadków skutera",
+        "crash_mid": "Średni (skala PL)",
+        "crash_low": "Niski · próg śmiertelności",
+        "crash_high": "Wysoki · mieszany UE",
+        "adv_vat": "licz VAT od paliwa",
+        "adv_vat_hint": "Wył. = tylko podatki paliwowe",
+        "twist_eye": "Haczyk",
+        "twist_h": "Elektryk pokrywa <em>mniej</em>, nie więcej",
+        "twist_lede": "Przełącz na <b>elektryk</b>. Strona kosztów prawie się nie rusza — wypadki i zatłoczenie to większość, a EV powoduje oba. Strona wpłat się załamuje: prawie zero podatku paliwowego plus dopłata do zakupu. Więc ogół pokrywa <em>większą</em> część śladu EV niż auta benzynowego. To celowa dopłata do dekarbonizacji, nie darmowy obiad — warto wiedzieć.",
+        "read_h": "Jak to czytać",
+        "read_li1": "<b>Na kilometr, solo.</b> Koszty to wartości z podręcznika na pasażerokilometr, traktowane jako na kilometr dla jednej osoby — Twój realny ślad, gdy jeździsz sam. Wspólne dojazdy obniżają koszt na osobę.",
+        "read_li2": "<b>Zatłoczenie to zakres, nie punkt.</b> To najbardziej zależny od miejsca i czasu koszt; suwak przesuwa go od otwartej drogi po szczyt w centrum. Jednoślady przeciskają się w korku, więc ich koszt to zero — i tu skuter cicho wygrywa w gęstym mieście.",
+        "read_li3": "<b>Skuter to nie niewinny aniołek.</b> Wciąż niesie realny koszt wypadków — choć większość tego ryzyka spada na kierowcę, a sporą część reszty powodują kierowcy aut.",
+        "read_li4": "<b>To model do dyskusji.</b> Każdą stawkę powyżej można edytować.",
+        "flag_note": "Tymczasowa obniżka VAT/akcyzy na paliwo w Polsce wygasa 31 maja 2026 — kwoty podatków paliwowych używają tu stawek standardowych.",
+        "foot_method": "METODA · koszty zewnętrzne: EC/CE Delft Handbook on the external costs of transport 2019 (UE-28, ceny 2016 €), na km, jedna osoba. Zatłoczenie skalowane pasmem miejskim.",
+        "foot_contrib": "WPŁATY · PL 2026 akcyza + opłata paliwowa + (opcjonalnie) VAT od paliwa + cykliczna rejestracja; dopłata do zakupu EV amortyzowana przez 8 lat.",
+        "foot_scooter": "PODZIAŁ SKUTERA · dane KGP/ITS o wypadkach (ciężkość moped vs motocykl) przeskalowują mieszany koszt wypadków jednośladów. % pokrycia personalizuje wskaźnik ~48% dla UE-28 (Transport taxes & charges in Europe 2019).",
+        "foot_nodata": "Bez danych z ogłoszeń · tylko publiczne współczynniki.",
     },
 }
 
@@ -528,8 +606,9 @@ function render(){
   const r = compute();
   bars(r.ext, r.extTotal, $("debitItems"));
   bars(r.cred, r.credTotal, $("creditItems"));
-  $("debitTotal").textContent = PLN(r.extTotal) + " /yr";
-  $("creditTotal").textContent = PLN(r.credTotal) + " /yr";
+  const perYr = _t("per_yr") || "/yr";
+  $("debitTotal").textContent = PLN(r.extTotal) + " " + perYr;
+  $("creditTotal").textContent = PLN(r.credTotal) + " " + perYr;
   const cov = r.coverage, covEl = $("coverage"), say = $("verdictSay");
   covEl.className = "bignum mono " + (cov===null?"mid":cov<0?"bad":cov<60?"bad":cov<100?"mid":"good");
   covEl.textContent = cov===null ? "—" : Math.round(cov)+"%";
@@ -558,6 +637,16 @@ $("crash").addEventListener("change", e=>{ state.crash=e.target.value; render();
 $("vat").addEventListener("change", e=>{ state.vat=e.target.checked; render(); });
 window.addEventListener("uichange", buildModes);
 buildModes();
+
+// Seed pump prices (used for the fuel-VAT portion) from the live endpoint.
+function applyFuel(d){
+  if(!d) return;
+  if(d.petrol>0 && CFG.fuelTax.petrol) CFG.fuelTax.petrol.pump = d.petrol;
+  if(d.diesel>0 && CFG.fuelTax.diesel) CFG.fuelTax.diesel.pump = d.diesel;
+  if(d.electric>0 && CFG.fuelTax.electric) CFG.fuelTax.electric.pump = d.electric;
+  render();
+}
+fetch("/api/fuel").then(r => r.ok ? r.json() : null).then(applyFuel).catch(() => {});
 """
 
 
@@ -591,8 +680,8 @@ def _render_html(*, year: int) -> str:
   road use you actually cover.</p>
   <div class="rule"></div>
   <nav class="nav">
-    <a href="cost.html" data-i18n="nav_cost">Personal cost</a>
-    <a href="index.html" class="here" data-i18n="nav_ledger">Public-money ledger</a>
+    <a href="index.html" data-i18n="nav_cost">Personal cost</a>
+    <a href="ledger.html" class="here" data-i18n="nav_ledger">Public-money ledger</a>
     <a href="depreciation.html" data-i18n="nav_depr">Depreciation curves</a>
     <a href="practice.html" data-i18n="nav_practice">In practice</a>
   </nav>
@@ -625,8 +714,8 @@ def _render_html(*, year: int) -> str:
     <div class="owed" id="scaleOwed" style="width:100%"></div>
   </div>
   <div class="scalekey">
-    <span class="c">▰ you pay</span>
-    <span class="d">everyone else covers ▱</span>
+    <span class="c">▰ <span data-i18n="scale_pay">you pay</span></span>
+    <span class="d"><span data-i18n="scale_cover">everyone else covers</span> ▱</span>
   </div>
   <p class="modenote" id="modeNote"></p>
 </div>
@@ -636,69 +725,76 @@ def _render_html(*, year: int) -> str:
     <h3 data-i18n="credit_h">What you pay the state</h3>
     <p class="csub">akcyza · opłata paliwowa · VAT · fees − subsidy</p>
     <div id="creditItems"></div>
-    <div class="sum"><span>Per year</span><span class="v mono" id="creditTotal">—</span></div>
+    <div class="sum"><span data-i18n="per_year">Per year</span><span class="v mono" id="creditTotal">—</span></div>
   </div>
   <div class="col debit">
     <h3 data-i18n="debit_h">What you cost society</h3>
     <p class="csub">EC/CE Delft external-cost coefficients</p>
     <div id="debitItems"></div>
-    <div class="sum"><span>Per year</span><span class="v mono" id="debitTotal">—</span></div>
+    <div class="sum"><span data-i18n="per_year">Per year</span><span class="v mono" id="debitTotal">—</span></div>
   </div>
 </div>
 
 <details class="adv reveal" style="animation-delay:.16s">
   <summary data-i18n="assumptions">Assumptions — adjust the model</summary>
   <div class="advgrid">
-    <div class="field"><label>EUR → PLN rate</label>
+    <div class="field"><label data-i18n="adv_eur">EUR → PLN rate</label>
       <input type="number" id="eur" step="0.01" value="4.30"></div>
-    <div class="field"><label>EV purchase subsidy (PLN)</label>
+    <div class="field"><label data-i18n="adv_subsidy">EV purchase subsidy (PLN)</label>
       <input type="number" id="subsidy" step="250" value="18750"></div>
-    <div class="field"><label>Scooter crash estimate</label>
+    <div class="field"><label data-i18n="adv_crash">Scooter crash estimate</label>
       <select id="crash">
-        <option value="point" selected>Mid (PL-scaled)</option>
-        <option value="low">Low · death-rate floor</option>
-        <option value="high">High · EU blended</option>
+        <option value="point" selected data-i18n="crash_mid">Mid (PL-scaled)</option>
+        <option value="low" data-i18n="crash_low">Low · death-rate floor</option>
+        <option value="high" data-i18n="crash_high">High · EU blended</option>
       </select></div>
-    <div class="field"><label class="chk"><input type="checkbox" id="vat" checked> count fuel VAT</label>
-      <span class="csub" style="display:block;margin-top:.5rem">Off = fuel-specific taxes only</span></div>
+    <div class="field"><label class="chk"><input type="checkbox" id="vat" checked> <span data-i18n="adv_vat">count fuel VAT</span></label>
+      <span class="csub" style="display:block;margin-top:.5rem" data-i18n="adv_vat_hint">Off = fuel-specific taxes only</span></div>
   </div>
 </details>
 
 <section class="reveal">
-  <p class="eyebrow">The twist</p>
-  <h2>Going electric covers <em>less</em>, not more</h2>
-  <p class="lede">Switch to <b>electric</b>. The cost side barely moves — crashes
+  <p class="eyebrow" data-i18n="twist_eye">The twist</p>
+  <h2 data-i18n-html="twist_h">Going electric covers <em>less</em>, not more</h2>
+  <p class="lede" data-i18n-html="twist_lede">Switch to <b>electric</b>. The cost side barely moves — crashes
   and congestion are most of it, and an EV imposes both. The payment side
   collapses: almost no fuel tax, plus a purchase grant. So the public ends up
   covering a <em>bigger</em> share of an EV's footprint than a petrol car's.
   That's a deliberate decarbonisation subsidy, not a free lunch — worth knowing.</p>
   <div class="note">
-    <h2>How to read this</h2>
+    <h2 data-i18n="read_h">How to read this</h2>
     <ul>
-      <li><b>Per kilometre, solo.</b> Costs are the handbook's per-passenger-km
+      <li data-i18n-html="read_li1"><b>Per kilometre, solo.</b> Costs are the handbook's per-passenger-km
       figures treated as per-km for a single rider — your real footprint if you
       drive alone. Carpooling lowers the per-person cost.</li>
-      <li><b>Congestion is a band, never a point.</b> It's the most place- and
+      <li data-i18n-html="read_li2"><b>Congestion is a band, never a point.</b> It's the most place- and
       time-specific cost; the selector swings it from open road to rush-hour core.
       Two-wheelers filter traffic, so theirs stays zero — which is where a
       scooter quietly wins a dense city.</li>
-      <li><b>A scooter isn't a free angel.</b> It still carries real crash cost —
+      <li data-i18n-html="read_li3"><b>A scooter isn't a free angel.</b> It still carries real crash cost —
       though most of that risk falls on the rider, and much of the rest comes from
       car drivers.</li>
-      <li><b>This is a model to argue with.</b> Every rate above is editable.</li>
+      <li data-i18n-html="read_li4"><b>This is a model to argue with.</b> Every rate above is editable.</li>
     </ul>
   </div>
-  <div class="flag">⚠ {FUEL_CUT_NOTE}</div>
+  <div class="flag">⚠ <span data-i18n="flag_note">{FUEL_CUT_NOTE}</span></div>
 </section>
 
 <footer>
-  <div>METHOD · external costs: EC/CE Delft Handbook on the external costs of transport 2019 (EU-28, 2016 €), per-km, solo occupancy. Congestion scaled by a city band.</div>
-  <div>CONTRIBUTION · PL 2026 akcyza + opłata paliwowa + (optional) fuel VAT + recurring registration; EV purchase grant amortised over {EV_SUBSIDY_HOLD_YEARS} years.</div>
-  <div>SCOOTER SPLIT · KGP/ITS PL crash data (moped vs motorcycle severity) rescales the blended PTW crash term. Coverage % personalises the EU-28 ~48% figure (Transport taxes &amp; charges in Europe 2019).</div>
-  <div>No marketplace data used · public coefficients only.</div>
+  <div data-i18n="foot_method">METHOD · external costs: EC/CE Delft Handbook on the external costs of transport 2019 (EU-28, 2016 €), per-km, solo occupancy. Congestion scaled by a city band.</div>
+  <div data-i18n="foot_contrib">CONTRIBUTION · PL 2026 akcyza + opłata paliwowa + (optional) fuel VAT + recurring registration; EV purchase grant amortised over {EV_SUBSIDY_HOLD_YEARS} years.</div>
+  <div data-i18n="foot_scooter">SCOOTER SPLIT · KGP/ITS PL crash data (moped vs motorcycle severity) rescales the blended PTW crash term. Coverage % personalises the EU-28 ~48% figure (Transport taxes &amp; charges in Europe 2019).</div>
+  <div data-i18n="foot_nodata">No marketplace data used · public coefficients only.</div>
 </footer>
 </div>
 """
-        + "<script>\nconst CFG = " + config + ";\nwindow.T = " + strings_json + ";\n"
-        + ui.SELECTOR_JS + "\n" + _LEDGER_JS + "</script>\n</body>\n</html>\n"
+        + "<script>\nconst CFG = "
+        + config
+        + ";\nwindow.T = "
+        + strings_json
+        + ";\n"
+        + ui.SELECTOR_JS
+        + "\n"
+        + _LEDGER_JS
+        + "</script>\n</body>\n</html>\n"
     )

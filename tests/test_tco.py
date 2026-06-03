@@ -187,7 +187,8 @@ class TestRender:
         html = Path(path).read_text(encoding="utf-8")
         assert "const CFG =" in html  # coefficient source-of-truth embedded
         assert "const AGG_MOTO =" in html  # moto curves embedded
-        assert "const AGG_CAR =" in html  # car curves embedded
+        assert "const AGG_CAR_URL =" in html  # car curves lazy-loaded from a sidecar
+        assert (Path(path).parent / "tco_cars.json").exists()  # sidecar emitted
         assert 'data-veh="car"' in html  # vehicle selector present
         assert "langSeg" in html  # language selector present
         assert "function compute()" in html  # JS mirror present
@@ -203,12 +204,13 @@ class TestRender:
         assert set(cfg["categoryDefaults"]) == set(CATEGORY_DEFAULTS)
 
     def test_no_listing_fields_leak(self, tmp_path):
-        # The page embeds aggregates — assert it stays curves-only.
+        # The page embeds moto aggregates inline and emits car aggregates as a
+        # sidecar — assert both stay curves-only.
         path = render_tco(self._write(tmp_path, SAMPLE), output_dir=str(tmp_path))
         html = Path(path).read_text(encoding="utf-8")
-        for prefix in ("const AGG_MOTO =", "const AGG_CAR ="):
-            line = next(ln for ln in html.splitlines() if ln.startswith(prefix))
-            blob = line[len(prefix) :]
+        moto_line = next(ln for ln in html.splitlines() if ln.startswith("const AGG_MOTO ="))
+        sidecar = (Path(path).parent / "tco_cars.json").read_text(encoding="utf-8")
+        for blob in (moto_line, sidecar):
             for leak in ('"url"', '"title"', '"listing_uid"', '"seller_name"'):
                 assert leak not in blob
 

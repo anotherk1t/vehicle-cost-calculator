@@ -30,13 +30,14 @@ STAGE3_BUDGET = os.path.join("data", "stage3_gdansk_transport.json")
 
 
 def main() -> None:
-    # Surface 2 — public-money-on-you calculator (the landing page). Pure
-    # coefficients, no data dependency.
-    render_social_cost(output_dir=OUTPUT_DIR, filename="index.html")
+    # Surface 1 — the personal TCO calculator (the spine, and the landing page at
+    # the domain root). Reads the engine's aggregates for the depreciation curve;
+    # renders a data-gate if it's absent.
+    render_tco(AGGREGATES, output_dir=OUTPUT_DIR, filename="index.html")
 
-    # Surface 1 — the personal TCO calculator (the spine). Reads the engine's
-    # aggregates for the depreciation curve; renders a data-gate if it's absent.
-    render_tco(AGGREGATES, output_dir=OUTPUT_DIR, filename="cost.html")
+    # Surface 2 — public-money-on-you calculator (the public-money ledger). Pure
+    # coefficients, no data dependency.
+    render_social_cost(output_dir=OUTPUT_DIR, filename="ledger.html")
 
     # Surface 1 (input) — the standalone depreciation page, rendered from the same
     # engine aggregates. The private pipeline drops data/aggregates.json (derived

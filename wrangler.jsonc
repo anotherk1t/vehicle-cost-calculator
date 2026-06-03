@@ -7,9 +7,9 @@
   "compatibility_date": "2026-04-23",
   "main": "worker/index.js",
   "assets": {
-    // Built by `python build.py`. The Worker runs first so the Basic-Auth gate
-    // covers every asset (without run_worker_first the files serve directly and
-    // auth is bypassed).
+    // Built by `python build.py`. The site is public: with run_worker_first
+    // false, every built file serves straight from the edge and the Worker runs
+    // only for non-asset paths (just GET /api/fuel — see worker/index.js).
     "directory": "./public/",
     "binding": "ASSETS",
     "run_worker_first": false
