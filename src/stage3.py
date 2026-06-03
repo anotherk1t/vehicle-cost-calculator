@@ -201,7 +201,8 @@ h2{font-family:"Anton",sans-serif; font-weight:400; text-transform:uppercase; fo
 #map{height:600px; border-radius:16px; border:1px solid var(--line); margin:0; background:#0f141a; z-index:0}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#13181d; color:#eef1f3; border:1px solid #252c33}
 .leaflet-popup-content{font-family:"Newsreader",Georgia,serif; font-size:.86rem; line-height:1.45; margin:.7rem .9rem}
-.leaflet-popup-content b{font-size:.9rem}
+.leaflet-popup-content b{font-size:.92rem; font-weight:500}
+.leaflet-popup-content .mono{font-family:"IBM Plex Mono",monospace; font-size:.76rem; color:var(--muted)}
 .leaflet-container a.leaflet-popup-close-button{color:#8b97a6}
 .leaflet-bar a{background:#13181d; color:#eef1f3; border-bottom-color:#252c33}
 .leaflet-bar a:hover{background:#1c232b}
@@ -285,9 +286,11 @@ function drawRun(){
 let _map=null, _layer=null, _mode="all";
 function popupHtml(p){
   const mln=_t("pop_mln");
-  let s=`<b>${p.n}</b><br>${p.yr} · ${p.tot.toLocaleString("pl-PL")} ${mln}`;
-  s+=`<br>${_t("pop_city")}: ${p.city.toLocaleString("pl-PL")} ${mln}`;
+  let s=`<b>${p.n}</b><br>`;
+  s+=`<span class="mono">${p.yr} · ${p.tot.toLocaleString("pl-PL")} ${mln}<br>`;
+  s+=`${_t("pop_city")}: ${p.city.toLocaleString("pl-PL")} ${mln}`;
   if(p.ue>0) s+=` · ${_t("pop_ue")}: ${p.ue.toLocaleString("pl-PL")} ${mln}`;
+  s+=`</span>`;
   return s;
 }
 function drawMarkers(){
