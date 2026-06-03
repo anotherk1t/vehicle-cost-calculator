@@ -129,14 +129,11 @@ _FONTS = (
     '<link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500&'
     'family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">'
 )
-# Leaflet from unpkg, pinned with Subresource Integrity so a CDN compromise can't
-# inject script (official 1.9.4 hashes). crossorigin is required for SRI to apply.
-_LEAFLET = (
-    '<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" '
-    'integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">'
-    '<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" '
-    'integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>'
-)
+# Leaflet is injected dynamically in initMap() so the browser has fully rendered
+# and laid out the #map container before Leaflet measures it. Loading from <head>
+# can race the .reveal animation (transform:translateY) and give Leaflet zero
+# dimensions, producing a blank map. The integrity hashes are verified against
+# cdn.jsdelivr.net 1.9.4 bytes; crossOrigin is required for SRI to apply.
 
 _STYLE = """
 :root{
@@ -311,18 +308,31 @@ function drawMarkers(){
     }).bindPopup(popupHtml(p)).addTo(_layer);
   });
 }
+let _leafletLoaded = false;
 function initMap(){
-  if(typeof L==="undefined"){
-    const el=document.getElementById("map");
-    if(el) el.innerHTML='<p style="color:var(--muted);padding:2rem;font-family:IBM Plex Mono,monospace;font-size:.8rem">Map failed to load — check browser console.</p>';
-    return;
-  }
+  const mapDiv = document.getElementById("map");
+  if(!mapDiv) return;
+  if(_leafletLoaded){ _startMap(); return; }
+  const css = document.createElement("link");
+  css.rel = "stylesheet";
+  css.href = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css";
+  css.integrity = "sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=";
+  css.crossOrigin = "";
+  document.head.appendChild(css);
+  const js = document.createElement("script");
+  js.src = "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js";
+  js.integrity = "sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=";
+  js.crossOrigin = "";
+  js.onerror = () => { mapDiv.innerHTML = '<p style="color:var(--muted);padding:2rem;font-family:IBM Plex Mono,monospace;font-size:.8rem">Map failed to load — check browser console.</p>'; };
+  js.onload = () => { _leafletLoaded = true; _startMap(); };
+  document.head.appendChild(js);
+}
+function _startMap(){
   _map = L.map("map", {scrollWheelZoom:false}).setView([54.372,18.62], 11);
   L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
     attribution:'© OpenStreetMap, © CARTO', subdomains:"abcd", maxZoom:18
   }).addTo(_map);
   _layer = L.layerGroup().addTo(_map);
-  // set slider range from actual data
   const yrs = (INVEST.projects||[]).map(p=>p.yr).filter(Boolean);
   if(yrs.length){
     const ymin=Math.min(...yrs), ymax=Math.max(...yrs);
@@ -331,9 +341,6 @@ function initMap(){
     document.getElementById("yrVal").textContent=ymin;
   }
   drawMarkers();
-  // .reveal animation plays for ~700ms — re-tile the map after it settles so
-  // Leaflet can measure the container's real pixel size.
-  setTimeout(()=>_map.invalidateSize(), 750);
   document.querySelectorAll("#modeFilter button").forEach(b=>b.addEventListener("click",()=>{
     _mode=b.dataset.m;
     document.querySelectorAll("#modeFilter button").forEach(x=>x.classList.toggle("on", x===b));
@@ -465,7 +472,6 @@ def _render_html(budget: dict, invest: dict) -> str:
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Gdańsk transport budget · roads vs transit</title>
 {_FONTS}
-{_LEAFLET}
 <style>{_STYLE}{ui.SELECTOR_CSS}</style>
 </head>
 <body>
