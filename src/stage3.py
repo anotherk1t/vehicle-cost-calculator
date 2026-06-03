@@ -308,10 +308,17 @@ function drawMarkers(){
 function initMap(){
   if(typeof L === "undefined"){
     const el = document.getElementById("map");
-    if(el) el.innerHTML = '<p style="color:var(--muted);padding:2rem;font-family:IBM Plex Mono,monospace;font-size:.8rem">Map failed to load.</p>';
+    if(el) el.innerHTML = '<p style="color:var(--muted);padding:2rem;font-family:IBM Plex Mono,monospace;font-size:.8rem">Map failed to load (L undefined).</p>';
     return;
   }
+  // Defer one rAF tick so the browser finalises layout before Leaflet measures the container.
+  requestAnimationFrame(function(){
+  try {
   _map = L.map("map", {scrollWheelZoom:false}).setView([54.372,18.62], 11);
+  } catch(e) {
+    document.getElementById("map").innerHTML = '<p style="color:#f35b04;padding:2rem;font-family:IBM Plex Mono,monospace;font-size:.8rem">L.map error: '+e.message+'</p>';
+    return;
+  }
   L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
     attribution:'© OpenStreetMap, © CARTO', subdomains:"abcd", maxZoom:18
   }).addTo(_map);
@@ -333,6 +340,7 @@ function initMap(){
     document.getElementById("yrVal").textContent=e.target.value;
     drawMarkers();
   });
+  }); // end requestAnimationFrame
 }
 function drawLegend(){
   document.getElementById("mlegend").innerHTML =
@@ -341,9 +349,6 @@ function drawLegend(){
 }
 
 function renderCharts(){ drawFlip(); drawRun(); drawLegend(); if(_map) drawMarkers(); enhanceChartsS(); }
-renderCharts();
-initMap();
-window.addEventListener("uichange", renderCharts);
 
 // --- hover crosshair + expand-to-lightbox for the two budget charts ---
 const _NSS = "http://www.w3.org/2000/svg";
@@ -436,6 +441,10 @@ function enhanceChartsS(){
   document.querySelectorAll("svg[data-meta]").forEach(wireHoverS);
   document.querySelectorAll(".card").forEach(addExpandS);
 }
+
+renderCharts();
+initMap();
+window.addEventListener("uichange", renderCharts);
 """
 
 
@@ -500,10 +509,10 @@ def _render_html(budget: dict, invest: dict) -> str:
   </div>
 </section>
 
-<section class="reveal">
-  <p class="eyebrow" data-i18n="map_eye">On the ground</p>
-  <h2 data-i18n="map_h">What the capital actually built, and where</h2>
-  <p class="lede" data-i18n="map_lede">Named investments by mode.</p>
+<section>
+  <p class="eyebrow reveal" data-i18n="map_eye">On the ground</p>
+  <h2 class="reveal" data-i18n="map_h">What the capital actually built, and where</h2>
+  <p class="lede reveal" data-i18n="map_lede">Named investments by mode.</p>
   <div class="mapctl">
     <div class="seg" id="modeFilter" role="group">
       <button data-m="all" class="on" data-i18n="f_all">All</button>
