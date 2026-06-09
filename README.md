@@ -1,4 +1,4 @@
-# mobility-cost-pl
+# Vehicle cost calculator
 
 A small, honest model of what a vehicle actually costs in Poland — to you, and to everyone else on the road. Static site, no backend, no tracking. Live at [yanb.dev](https://yanb.dev).
 
