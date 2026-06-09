@@ -165,6 +165,8 @@ footer{margin-top:3.4rem; padding-top:1.4rem; border-top:1px solid var(--line);
 
 STRINGS = {
     "en": {
+        "page_title_moto": "Motorcycle depreciation · PL used market",
+        "page_title_car": "Car depreciation · PL used market",
         "veh_moto": "Moto",
         "veh_car": "Car",
         "h1": "How fast a<br>vehicle bleeds value",
@@ -223,6 +225,8 @@ STRINGS = {
         "limited_badge": "limited",
     },
     "pl": {
+        "page_title_moto": "Utrata wartości · motocykle · rynek PL",
+        "page_title_car": "Utrata wartości · auta · rynek PL",
         "veh_moto": "Moto",
         "veh_car": "Auto",
         "h1": "Jak szybko<br>pojazd traci wartość",

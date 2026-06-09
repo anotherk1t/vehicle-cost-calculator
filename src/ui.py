@@ -46,6 +46,9 @@ function applyLang(){
   document.querySelectorAll("[data-i18n]").forEach(el => { const t=_t(el.dataset.i18n); if(t!=null) el.textContent=t; });
   document.querySelectorAll("[data-i18n-html]").forEach(el => { const t=_t(el.dataset.i18nHtml); if(t!=null) el.innerHTML=t; });
   document.documentElement.lang = UI.lang;
+  const titleKey = _t("page_title_" + UI.veh) != null ? "page_title_" + UI.veh : "page_title";
+  const title = _t(titleKey);
+  if(title) document.title = title;
 }
 function _sync(){
   document.querySelectorAll("#langSeg button").forEach(b => b.setAttribute("aria-pressed", b.dataset.lang===UI.lang));
@@ -54,7 +57,7 @@ function _sync(){
 document.addEventListener("click", e => {
   const L = e.target.closest("#langSeg button"), V = e.target.closest("#vehSeg button");
   if(L){ UI.lang=L.dataset.lang; localStorage.setItem("ui_lang",UI.lang); _sync(); applyLang(); window.dispatchEvent(new CustomEvent("uichange")); }
-  if(V){ UI.veh=V.dataset.veh; localStorage.setItem("ui_veh",UI.veh); _sync(); window.dispatchEvent(new CustomEvent("uichange")); }
+  if(V){ UI.veh=V.dataset.veh; localStorage.setItem("ui_veh",UI.veh); _sync(); applyLang(); window.dispatchEvent(new CustomEvent("uichange")); }
 });
 _sync(); applyLang();
 """

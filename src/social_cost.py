@@ -447,6 +447,8 @@ footer{margin-top:3.4rem; padding-top:1.4rem; border-top:1px solid var(--line);
 
 STRINGS: dict[str, dict[str, str]] = {
     "en": {
+        "page_title_moto": "What the road costs · moto · public ledger · PL",
+        "page_title_car": "What the road costs · car · public ledger · PL",
         "veh_moto": "Moto",
         "veh_car": "Car",
         "h1": "Who pays<br>for your ride?",
@@ -503,6 +505,8 @@ STRINGS: dict[str, dict[str, str]] = {
         "foot_nodata": "No marketplace data used · public coefficients only.",
     },
     "pl": {
+        "page_title_moto": "Koszt drogi · moto · bilans publiczny · PL",
+        "page_title_car": "Koszt drogi · auto · bilans publiczny · PL",
         "veh_moto": "Moto",
         "veh_car": "Auto",
         "h1": "Kto płaci<br>za Twoją jazdę?",

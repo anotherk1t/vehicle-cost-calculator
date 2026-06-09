@@ -958,6 +958,8 @@ def _gate() -> str:
 # UI translations. `{x}` are fmt() placeholders filled in JS.
 STRINGS: dict[str, dict[str, str]] = {
     "en": {
+        "page_title_moto": "Moto TCO · true ownership cost · PL",
+        "page_title_car": "Car TCO · true ownership cost · PL",
         "veh_moto": "Moto",
         "veh_car": "Car",
         "h1": "The sticker is<br>the small print",
@@ -1030,6 +1032,8 @@ STRINGS: dict[str, dict[str, str]] = {
         "caveat3": "<b>Resale assumes an average example.</b> Your vehicle's condition, mileage and history move the sell value off the curve. Treat the end value as the midpoint of a fleet, not a promise.",
     },
     "pl": {
+        "page_title_moto": "TCO moto · prawdziwy koszt posiadania · PL",
+        "page_title_car": "TCO auto · prawdziwy koszt posiadania · PL",
         "veh_moto": "Moto",
         "veh_car": "Auto",
         "h1": "Cena to<br>tylko nagłówek",

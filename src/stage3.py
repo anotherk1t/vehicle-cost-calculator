@@ -48,6 +48,7 @@ MODE_COLOR = {"road": "#f4a31c", "transit": "#34d399"}
 
 STRINGS = {
     "en": {
+        "page_title": "Gdańsk transport budget · roads vs transit",
         "kicker": "Gdańsk · public transport budget · 2004–2024",
         "h1": "Where the city's<br>mobility money goes",
         "dek": "Gdańsk's own transport budget, pulled from GUS public finance data. The split between road builders and transit passengers, in złoty per resident.",
@@ -84,6 +85,7 @@ STRINGS = {
         "src": "Sources · GUS Bank Danych Lokalnych, dział 600 (budget series) + Gdańska Mapa Inwestycji (project locations & costs). Derived totals only — no marketplace data.",
     },
     "pl": {
+        "page_title": "Budżet transportowy Gdańska · drogi vs transit",
         "kicker": "Gdańsk · budżet transportu · 2004–2024",
         "h1": "Dokąd płynie miejski<br>budżet na transport",
         "dek": "To nie polemika — to budżet transportowy Gdańska, odczytany z danych GUS o finansach publicznych. Kto dostaje pieniądze: budowniczowie dróg czy pasażerowie tramwajów i kolei?",
