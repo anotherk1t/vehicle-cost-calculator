@@ -34,6 +34,7 @@ SELECTOR_CSS = """
   font:inherit; font-size:.74rem; padding:.4rem .8rem; letter-spacing:.04em; transition:.15s}
 .seg button:hover{color:var(--ink)}
 .seg button[aria-pressed="true"]{background:var(--ink); color:#0b0b0f}
+@media(max-width:640px){.uibar{margin-bottom:.8rem; padding-top:.6rem}}
 """
 
 
