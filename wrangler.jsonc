@@ -5,13 +5,9 @@
   "name": "yellow-mud-0e8b",
   "account_id": "9ff0105db10d3e0788b3e8cf8f033bbe",
   "compatibility_date": "2026-04-23",
-  "main": "worker/index.js",
   "assets": {
-    // Built by `python build.py`. The site is public: with run_worker_first
-    // false, every built file serves straight from the edge and the Worker runs
-    // only for non-asset paths (just GET /api/fuel — see worker/index.js).
+    // Built by `python build.py` and served directly from the edge.
     "directory": "./public/",
-    "binding": "ASSETS",
-    "run_worker_first": false
+    "not_found_handling": "404-page"
   }
 }

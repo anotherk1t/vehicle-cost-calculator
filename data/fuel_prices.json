@@ -1,0 +1,27 @@
+{
+  "country": "PL",
+  "observed_at": "2026-08-24",
+  "published_at": "2026-08-27",
+  "source": "European Commission Weekly Oil Bulletin",
+  "source_url": "https://energy.ec.europa.eu/data-and-analysis/weekly-oil-bulletin_en",
+  "unit": "PLN/l",
+  "conversion": {
+    "source": "National Bank of Poland Table A",
+    "source_url": "https://api.nbp.pl/api/exchangerates/rates/a/eur/2026-08-24/?format=json",
+    "rate_date": "2026-08-24",
+    "pln_per_eur": 4.3124
+  },
+  "original_eur_per_l": {
+    "petrol95": 1.507706627,
+    "diesel": 1.728178662,
+    "lpg": 0.682858333
+  },
+  "prices": {
+    "petrol95": 6.50,
+    "diesel": 7.45,
+    "lpg": 2.94
+  },
+  "stale_after_days": 14,
+  "stale": false,
+  "note": "Derived from the official EUR bulletin values multiplied by the official NBP PLN/EUR rate; prices remain editable."
+}
