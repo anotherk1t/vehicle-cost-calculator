@@ -116,7 +116,7 @@ def test_frontend_supports_versioned_motorcycle_taxonomy():
     assert set(CATEGORY_DEFAULTS) == expected
     aggregate = json.loads(Path("data/aggregates.json").read_text())
     assert aggregate["meta"]["taxonomy_version"] == "2026-08-31-family-v2"
-    assert len(aggregate["models"]) == 461
+    assert len(aggregate["models"]) == 475
     assert {model["category"] for model in aggregate["models"].values()} == expected
     assert aggregate["models"]["Honda Forza"]["category"] == "maxi_scooter"
     assert aggregate["models"]["BMW F"]["category_status"] == "variant_required"
