@@ -64,8 +64,9 @@ class TestStrings:
 
 class TestRender:
     def test_renders_with_embedded_data_and_map(self, tmp_path):
-        out = render_stage3(budget_path=str(BUDGET), invest_path=str(INVEST),
-                            output_dir=str(tmp_path), filename="practice.html")
+        out = render_stage3(
+            budget_path=str(BUDGET), invest_path=str(INVEST), output_dir=str(tmp_path), filename="practice.html"
+        )
         html = Path(out).read_text(encoding="utf-8")
         assert html.startswith("<!doctype html>")
         # data embedded inline (no fetch at runtime for our own data)
@@ -78,8 +79,7 @@ class TestRender:
         assert 'href="practice.html"' in html and 'class="here"' in html
 
     def test_handles_missing_investments_file(self, tmp_path):
-        out = render_stage3(budget_path=str(BUDGET), invest_path=str(tmp_path / "nope.json"),
-                            output_dir=str(tmp_path))
+        out = render_stage3(budget_path=str(BUDGET), invest_path=str(tmp_path / "nope.json"), output_dir=str(tmp_path))
         assert "const INVEST =" in Path(out).read_text(encoding="utf-8")
 
     def test_no_marketplace_rows_leak(self, tmp_path):
